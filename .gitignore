@@ -1,0 +1,13 @@
+jcura-venv/
+*.pyc
+.env
+.ropeproject/
+staticfiles
+*.wav
+*.WAV
+*.Wav
+Ableton
+acoustic_samples
+drum_machines
+Vintage Drums and Keys
+audio
