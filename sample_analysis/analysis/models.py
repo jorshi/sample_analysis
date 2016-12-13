@@ -40,6 +40,7 @@ class Analysis(models.Model):
 
     sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
     loudness = models.FloatField(blank=True, null=True)
+    equal_loudness = models.FloatField(blank=True, null=True)
     spectral_flux = models.FloatField(blank=True, null=True)
 
 # Create your models here.
