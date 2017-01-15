@@ -41,6 +41,9 @@ class Analysis(models.Model):
     sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
     loudness = models.FloatField(blank=True, null=True)
     equal_loudness = models.FloatField(blank=True, null=True)
-    spectral_flux = models.FloatField(blank=True, null=True)
+    spectral_centroid = models.FloatField(blank=True, null=True)
+    temporal_centroid = models.FloatField(blank=True, null=True)
+    rms = models.FloatField(blank=True, null=True)
+    spectral_kurtosis = models.FloatField(blank=True, null=True)
 
 # Create your models here.
