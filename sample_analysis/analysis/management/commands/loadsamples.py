@@ -6,7 +6,7 @@ into the database model
 import sys, os
 from django.utils.encoding import smart_text
 from django.core.management.base import BaseCommand, CommandError
-from analysis.models import SamplePack, Kit, Sample
+from analysis.models import SamplePack, Kit, Sample, Tag
 
 
 class Command(BaseCommand):
@@ -19,8 +19,28 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('directory', nargs='+', type=str)
 
+        parser.add_argument(
+            '--tags',
+            type=str,
+            dest='tags',
+            default=None,
+            help='Tags to add to sample packs'
+        )
+
 
     def handle(self, *args, **options):
+
+        self.tags = []
+        if options['tags'] is not None:
+            for tag in options['tags'].split(','):
+                try:
+                    tagObject = Tag.objects.get(word=tag)
+                except Tag.DoesNotExist:
+                    tagObject = Tag(word=tag)
+                    tagObject.save()
+
+                self.tags.append(tagObject)
+
         for directory in options['directory']:
             self.exploreSamplePack(directory, os.path.abspath(directory))
 
@@ -77,6 +97,9 @@ class Command(BaseCommand):
                     except SamplePack.DoesNotExist:
                         samplePack = SamplePack(id_name=id, name=item)
                         samplePack.save()
+
+                    [samplePack.tags.add(tag) for tag in self.tags]
+                    samplePack.save()
 
                     self.exploreSamplePack(item, fullPath, samplePack)
 

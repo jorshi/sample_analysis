@@ -2,9 +2,22 @@ from __future__ import unicode_literals
 
 from django.db import models
 
+class Tag(models.Model):
+    word = models.CharField(max_length=200, unique=True)
+
+    def __unicode__(self):
+        return self.word
+
+
 class SamplePack(models.Model):
     id_name = models.CharField(max_length=200, unique=True)
     name = models.CharField(max_length=200)
+    tags = models.ManyToManyField(Tag, related_name='samples_packs')
+    date = models.DateField(null=True)
+
+    def __unicode__(self):
+        return self.name
+
 
 class Kit(models.Model):
     sample_pack = models.ForeignKey('SamplePack', on_delete=models.CASCADE)
@@ -12,6 +25,10 @@ class Kit(models.Model):
 
     class Meta:
         unique_together = ('sample_pack', 'id_number')
+
+    def __unicode__(self):
+        return "%s kit_%s" % (self.sample_pack.name, self.id_number)
+
 
 class Sample(models.Model):
 
@@ -31,9 +48,13 @@ class Sample(models.Model):
         choices=SAMPLE_TYPE_CHOICES,
         default=UNKNOWN,
     )
-    
+
     class Meta:
         unique_together = ('kit', 'path')
+
+
+    def __unicode__(self):
+        return "%s %s" % (self.kit.__unicode__(), self.sample_type)
 
 
 class Analysis(models.Model):
@@ -42,6 +63,8 @@ class Analysis(models.Model):
     loudness = models.FloatField(blank=True, null=True)
     equal_loudness = models.FloatField(blank=True, null=True)
     spectral_centroid = models.FloatField(blank=True, null=True)
+    spectral_centroid_1 = models.FloatField(blank=True, null=True)
+    spectral_centroid_2 = models.FloatField(blank=True, null=True)
     temporal_centroid = models.FloatField(blank=True, null=True)
     rms = models.FloatField(blank=True, null=True)
     spectral_kurtosis = models.FloatField(blank=True, null=True)
