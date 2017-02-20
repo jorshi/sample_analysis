@@ -1,5 +1,6 @@
 import sys
 import essentia.standard as es
+import numpy as np
 import math
 from django.core.management.base import BaseCommand, CommandError
 from analysis.models import Sample, Analysis
@@ -51,18 +52,30 @@ class Command(BaseCommand):
                 'function': self.spectral_centroid,
                 'loader': self.loaders['eqloud'],
             },
+            'spectral_centroid_1': {
+                'function': self.spectral_centroid_1,
+                'loader': self.loaders['eqloud'],
+            },
+            'spectral_centroid_2': {
+                'function': self.spectral_centroid_2,
+                'loader': self.loaders['eqloud'],
+            },
             'temporal_centroid': {
                 'function': self.temporal_centroid,
                 'loader': self.loaders['eqloud'],
             },
             'rms': {
                 'function': self.rms,
-                'loader': self.loaders['mono'],
+                'loader': self.loaders['eqloud'],
             },
             'spectral_kurtosis': {
                 'function': self.spectral_kurtosis,
                 'loader': self.loaders['eqloud'],
-            }
+            },
+            'pitch_salience': {
+                'function': self.pitch_salience,
+                'loader': self.loaders['eqloud'],
+            },
         }
 
         # Try running analysis function
@@ -79,9 +92,16 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Complete'))
 
 
-    def runAnalysis(self):
+    def getMeanTemporalCentroid(self):
 
         samples = Sample.objects.all()
+        temporal = [sample.tamporal_centroid for sample in samples]
+
+
+
+    def runAnalysis(self):
+
+        samples = Sample.objects.all().filter(exclude=False)
         numSamples = len(samples)
 
         self.stdout.write("Running %s analysis on %s samples. " % (self.field, numSamples))
@@ -90,9 +110,20 @@ class Command(BaseCommand):
         for sample in samples:
 
             # Get audio and run loudness analysis
-            loader = self.analysis['loader'](filename=sample.path)
-            audio = loader()
-            value = self.analysis['function'](audio)
+            try:
+                loader = self.analysis['loader'](filename=sample.path)
+                audio = loader()
+
+                # Trim the audio clip
+                trimmer = es.Trimmer(startTime=sample.start_time, endTime=sample.stop_time)
+                audio = trimmer(audio)
+
+            except RuntimeError:
+                self.stderr.write("%s failed to load. Excluding sample from further analysis" % sample.path)
+                sample.exclude = True
+                sample.save()
+                i = i + 1
+                continue
 
             # Get analysis object for this sample and save
             try:
@@ -100,6 +131,14 @@ class Command(BaseCommand):
             except Analysis.DoesNotExist:
                 analysisObject = Analysis(sample=sample)
 
+            # Store temporal centroid
+            if self.field in ['spectral_centroid_2']:
+                self.temporalCentroid = analysisObject.temporal_centroid
+                if self.temporalCentroid == None:
+                    print "Run temporal centroid first"
+                    sys.exit()
+
+            value = self.analysis['function'](audio)
             setattr(analysisObject, self.field, value)
             analysisObject.save()
 
@@ -164,7 +203,48 @@ class Command(BaseCommand):
         return mean(spectralKurtosis)
 
 
+    def spectral_centroid_1(self, audio):
 
+        # Zero pad
+        if len(audio) < 1024:
+            newAudio = np.zeros((1024,), audio.dtype)
+            for i in range(len(audio)):
+                newAudio[i] = audio[i]
+            audio = newAudio
 
+        return self.spectral_centroid(audio[0:1024])
+    
 
+    def spectral_centroid_2(self, audio):
+        
+        tSamples = int(self.temporalCentroid * 44100)
+        frame = np.zeros((1024,), audio.dtype)
+        length = (len(audio) - tSamples) if (len(audio) - tSamples) < 1024 else 1024
+
+        for i in range(length):
+            frame[i] = audio[i + tSamples]
+
+        return self.spectral_centroid(frame)
+
+    
+    def onset(self, audio):
+        
+        startStop = es.StartStopSilence()
+        startFrame = 0
+        stopFrame = 0
+
+        for frame in es.FrameGenerator(audio, 64, 32):
+           startFrame, stopFrame = startStop(frame)
+
+        startTime = float(startFrame * 32) / 44100.0
+        stopTime = float(stopFrame * 32) / 44100.0
+
+        return startTime
+
+    def pitch_salience(self, audio):
+
+        if self.esFunction is None:
+            self.esFunction = es.PitchSalience(lowBoundary=20)
+
+        return self.esFunction(audio)
 

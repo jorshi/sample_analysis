@@ -7,6 +7,7 @@ import sys, os
 from django.utils.encoding import smart_text
 from django.core.management.base import BaseCommand, CommandError
 from analysis.models import SamplePack, Kit, Sample, Tag
+import essentia.standard as es
 
 
 class Command(BaseCommand):
@@ -69,11 +70,23 @@ class Command(BaseCommand):
                         if fileItem[0] == '.':
                             continue
                         samplePath = smart_text(os.path.abspath(os.path.join(fullPath,fileItem)))
+
+                        # Try to extract start and stop time of the sample in question
+                        # if it fails then remove it from further testing
+                        try:
+                            startTime, stopTime = self.onsetDetection(samplePath)
+                        except RuntimeError:
+                            continue
+
                         try:
                             sample = Sample.objects.get(kit=prev, path=samplePath)
+                            sample.start_time = startTime
+                            sample.stop_time = stopTime
                         except Sample.DoesNotExist:
-                            sample = Sample(kit=prev, path=samplePath, sample_type=sampleType)
-                            sample.save()
+                            sample = Sample(kit=prev, path=samplePath, sample_type=sampleType,
+                                            start_time=startTime, stop_time=stopTime)
+                        
+                        sample.save()
 
                 # Assuming that no sample packs start with kit (:/)
                 elif item.lower().startswith('kit_'):
@@ -103,3 +116,21 @@ class Command(BaseCommand):
 
                     self.exploreSamplePack(item, fullPath, samplePack)
 
+
+    def onsetDetection(self, samplePath):
+
+        # Get audio from file
+        loader = es.MonoLoader(filename=samplePath)
+        audio = loader()
+
+        startStop = es.StartStopSilence()
+        startFrame = 0
+        stopFrame = 0
+
+        for frame in es.FrameGenerator(audio, 64, 32):
+           startFrame, stopFrame = startStop(frame)
+
+        startTime = float(startFrame * 32) / 44100.0
+        stopTime = float((stopFrame * 32) + 64) / 44100.0
+
+        return startTime, stopTime

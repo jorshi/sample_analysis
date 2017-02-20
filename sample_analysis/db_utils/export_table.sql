@@ -1,7 +1,9 @@
 
 USE sample_analysis;
 
-SELECT p.name, s.sample_type, a.loudness, a.equal_loudness
+SELECT 'Drum Machine', 'Type', 'Duration', 'Loudness', 'Equal Loudness', 'RMS', 'Temporal Centroid', 'Spectral Centroid', 'Spectral Kurtosis', 'Pitch Salience'
+UNION ALL
+SELECT p.name, s.sample_type, (s.stop_time - s.start_time) as duration, a.loudness, a.equal_loudness, a.rms, a.temporal_centroid, a.spectral_centroid, a.spectral_kurtosis, a.pitch_salience
 INTO OUTFILE '/Users/jshier/Development/School/jcura/sample_analysis/db_utils/output.csv'
     FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
     LINES TERMINATED BY '\n'
