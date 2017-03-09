@@ -1,20 +1,12 @@
-import sys
-import essentia.standard as es
-from sklearn.neighbors import NearestNeighbors
-from sklearn import preprocessing
-from sklearn.decomposition import PCA
-import numpy as np
-import math
-from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Avg
-from analysis.models import Sample, Analysis, AnalysisMinMax 
 
-#import plotly as py
-#import plotly.graph_objs as go
+import numpy as np
+from sklearn import preprocessing
+from django.core.management.base import BaseCommand, CommandError
+from analysis.models import Analysis, AnalysisMinMax 
+
 
 class Command(BaseCommand):
     help = 'Perform Min Max Scaling on entire analysis set'
-    
 
     # Executes on command runtime
     def handle(self, *args, **options):

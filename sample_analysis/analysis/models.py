@@ -14,7 +14,7 @@ class SamplePack(models.Model):
     name = models.CharField(max_length=200)
     tags = models.ManyToManyField(Tag, related_name='samples_packs')
     date = models.DateField(null=True, blank=True)
-    info_link = models.URLField(default=None, blank=True)
+    info_link = models.URLField(null=True, blank=True)
     exclude = models.BooleanField(default=False)
 
     def __unicode__(self):
@@ -96,8 +96,6 @@ class AnalysisMinMax(models.Model):
 
     sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
 
-    #duration = models.FloatField(blank=True, null=True)
-    #loudness = models.FloatField(blank=True, null=True)
     equal_loudness = models.FloatField(blank=True, null=True)
     spectral_centroid = models.FloatField(blank=True, null=True)
     spectral_centroid_1 = models.FloatField(blank=True, null=True)
@@ -106,41 +104,11 @@ class AnalysisMinMax(models.Model):
     rms = models.FloatField(blank=True, null=True)
     spectral_kurtosis = models.FloatField(blank=True, null=True)
     pitch_salience = models.FloatField(blank=True, null=True)
-
-
-class PCAComponents(models.Model):
-
-    dimension = models.IntegerField()
-    duration = models.FloatField(blank=True, null=True)
-    equal_loudness = models.FloatField(blank=True, null=True)
-    spectral_centroid = models.FloatField(blank=True, null=True)
-    spectral_centroid_1 = models.FloatField(blank=True, null=True)
-    spectral_centroid_2 = models.FloatField(blank=True, null=True)
-    temporal_centroid = models.FloatField(blank=True, null=True)
-    rms = models.FloatField(blank=True, null=True)
-    spectral_kurtosis = models.FloatField(blank=True, null=True)
-    pitch_salience = models.FloatField(blank=True, null=True)
-
-
-class PCAVariance(models.Model):
-
-    dim_1 = models.FloatField(blank=True, null=True)
-    dim_2 = models.FloatField(blank=True, null=True)
-    dim_3 = models.FloatField(blank=True, null=True)
-    dim_4 = models.FloatField(blank=True, null=True)
-    dim_5 = models.FloatField(blank=True, null=True)
-    dim_6 = models.FloatField(blank=True, null=True)
-    dim_7 = models.FloatField(blank=True, null=True)
-    dim_8 = models.FloatField(blank=True, null=True)
-    dim_9 = models.FloatField(blank=True, null=True)
-    dim_10 = models.FloatField(blank=True, null=True)
 
 
 class AnalysisPCA(models.Model):
 
     sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
-    variance = models.ForeignKey(PCAVariance, on_delete=models.CASCADE, null=True)
-    components = models.ForeignKey(PCAComponents, on_delete=models.CASCADE, null=True)
 
     dim_1 = models.FloatField(blank=True, null=True)
     dim_2 = models.FloatField(blank=True, null=True)
@@ -150,6 +118,3 @@ class AnalysisPCA(models.Model):
     dim_6 = models.FloatField(blank=True, null=True)
     dim_7 = models.FloatField(blank=True, null=True)
     dim_8 = models.FloatField(blank=True, null=True)
-    dim_9 = models.FloatField(blank=True, null=True)
-    dim_10 = models.FloatField(blank=True, null=True)
-

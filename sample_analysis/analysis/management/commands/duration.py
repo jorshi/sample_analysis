@@ -1,9 +1,5 @@
-import sys
-import essentia.standard as es
-import math
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Avg
-from analysis.models import Sample, Analysis 
+from analysis.models import Analysis 
 
 class Command(BaseCommand):
     help = 'Save duration in analysis object'

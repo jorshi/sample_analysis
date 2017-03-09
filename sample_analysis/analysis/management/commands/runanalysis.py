@@ -1,9 +1,22 @@
+"""
+Main command for running various feature extraction algorithms
+on the entire set of samples referenced in the database. As the
+set of features we want to extract grows this may get awkward,
+but for now it works well to get all the features into the DB
+and maintain the relation to the samples
+
+Usage:
+    python ./manage.py runanalysis analysis_type
+"""
+
+
 import sys
 import essentia.standard as es
 import numpy as np
 import math
 from django.core.management.base import BaseCommand, CommandError
 from analysis.models import Sample, Analysis
+
 
 class Command(BaseCommand):
     help = 'Run Essentia Analysis on Sample Set'
@@ -12,31 +25,16 @@ class Command(BaseCommand):
         'eqloud': es.EqloudLoader
     }
 
+
     # Override of the add_argument method
     def add_arguments(self, parser):
 
         # Required argument for the type of analysis to run
         parser.add_argument('analysis_type', nargs='+', type=str)
 
-        # Optional argument to specify the type of essentia loader
-        parser.add_argument(
-            '--loader',
-            dest='loader',
-            default = 'mono',
-            help = 'Specify the type of essentia audio loader'
-        )
-
 
     # Executes on command runtime
     def handle(self, *args, **options):
-
-        if options['loader']:
-            try:
-                self.loader = self.loaders[options['loader']]
-            except KeyError:
-                raise CommandError(
-                    'Invalid loader type. Select from %s' % self.loaders.keys()
-                )
 
         # Different options for analysis functions
         analysisTypes = {
@@ -92,23 +90,24 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Complete'))
 
 
-    def getMeanTemporalCentroid(self):
-
-        samples = Sample.objects.all()
-        temporal = [sample.tamporal_centroid for sample in samples]
-
-
-
+    # Main function for running analysis
     def runAnalysis(self):
 
-        samples = Sample.objects.all().filter(exclude=False)
-        numSamples = len(samples)
+        # Get all samples referenced in DB, except for those
+        # that have been marked as samples to exclude
+        # TODO: Need to clarify whether or not sample packs
+        # should be excluded if we can't find enough info on them,
+        # for now including all samplepacks
+        samples = Sample.objects.all().filter(
+            exclude=False,
+            #kit__sample_pack__exclude=False, 
+        )
 
+        numSamples = len(samples)
         self.stdout.write("Running %s analysis on %s samples. " % (self.field, numSamples))
         i = 0.0
 
         for sample in samples:
-
             # Get audio and run loudness analysis
             try:
                 loader = self.analysis['loader'](filename=sample.path)
@@ -131,7 +130,7 @@ class Command(BaseCommand):
             except Analysis.DoesNotExist:
                 analysisObject = Analysis(sample=sample)
 
-            # Store temporal centroid
+            # Store temporal centroid, required from some other calculations
             if self.field in ['spectral_centroid_2']:
                 self.temporalCentroid = analysisObject.temporal_centroid
                 if self.temporalCentroid == None:
@@ -213,10 +212,10 @@ class Command(BaseCommand):
             audio = newAudio
 
         return self.spectral_centroid(audio[0:1024])
-    
+
 
     def spectral_centroid_2(self, audio):
-        
+
         tSamples = int(self.temporalCentroid * 44100)
         frame = np.zeros((1024,), audio.dtype)
         length = (len(audio) - tSamples) if (len(audio) - tSamples) < 1024 else 1024
@@ -226,9 +225,9 @@ class Command(BaseCommand):
 
         return self.spectral_centroid(frame)
 
-    
+
     def onset(self, audio):
-        
+
         startStop = es.StartStopSilence()
         startFrame = 0
         stopFrame = 0
@@ -241,10 +240,10 @@ class Command(BaseCommand):
 
         return startTime
 
+
     def pitch_salience(self, audio):
 
         if self.esFunction is None:
             self.esFunction = es.PitchSalience(lowBoundary=20)
 
         return self.esFunction(audio)
-

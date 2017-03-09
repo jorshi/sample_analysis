@@ -9,6 +9,7 @@ sample is marked as an outlier.
     Usage: python ./manage.py remove_outliers sample_type
 """
 
+import sys
 from sklearn.neighbors import NearestNeighbors
 from sklearn import preprocessing
 import numpy as np
@@ -31,6 +32,11 @@ class Command(BaseCommand):
 
     # Executes on command runtime
     def handle(self, *args, **options):
+
+        choices = [x[0] for x in Sample.SAMPLE_TYPE_CHOICES]
+        if options['sample_type'][0] not in choices:
+            print "Sample type must by one of %s" % choices
+            sys.exit(1)
 
         # Dimensions to consider in outlier calculation
         dimensions = [

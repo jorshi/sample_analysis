@@ -11,7 +11,7 @@ import numpy as np
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
 from django.core.management.base import BaseCommand, CommandError
-from analysis.models import Analysis, AnalysisPCA
+from analysis.models import Sample, Analysis, AnalysisPCA
 
 
 class Command(BaseCommand):
@@ -26,6 +26,11 @@ class Command(BaseCommand):
 
     # Executes on command runtime
     def handle(self, *args, **options):
+        
+        choices = [x[0] for x in Sample.SAMPLE_TYPE_CHOICES]
+        if options['sample_type'][0] not in choices:
+            print "Sample type must by one of %s" % choices
+            sys.exit(1)
 
         # Dimensions to consider in PCA
         dimensions = [
