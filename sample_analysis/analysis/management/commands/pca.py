@@ -1,27 +1,34 @@
+"""
+Command line tool for running Primary Component Analysis on
+analysis objects of a selected sample type
+
+usage:
+    python ./manage.py pca sample_type
+"""
+
 import sys
-import essentia.standard as es
-from sklearn.neighbors import NearestNeighbors
+import numpy as np
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
-import numpy as np
-import math
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Avg
-from analysis.models import Sample, Analysis, AnalysisRobustScale, AnalysisPCA, PCAComponents, PCAVariance  
+from analysis.models import Analysis, AnalysisPCA
 
-#import plotly as py
-#import plotly.graph_objs as go
 
 class Command(BaseCommand):
     help = 'Principal Component Analysis'
-    
+
+    # Override of the add_argument method
+    def add_arguments(self, parser):
+
+        # Required argument for the type of analysis to run
+        parser.add_argument('sample_type', nargs=1, type=str)
+
 
     # Executes on command runtime
     def handle(self, *args, **options):
-        
+
         # Dimensions to consider in PCA
         dimensions = [
-            #'duration',
             'equal_loudness',
             'rms',
             'spectral_centroid',
@@ -34,25 +41,22 @@ class Command(BaseCommand):
 
         # Get all the analysis objects for a particular sample type
         analysisObjects = Analysis.objects.filter(
-            sample__sample_type='sn', 
+            sample__sample_type=options['sample_type'][0],
             outlier=False
         )
         matrix = []
-        order = []
         sampleOrder = []
 
-        # Create a numpy matrix of the analyis
+        # Create a numpy matrix of the analyis objects. Also, keep track of the sample order
+        # as they are retrieved from the database by storing references to the sample in the
+        # sampleOrder list
         for item in analysisObjects:
-            order.append(item.id)
             sampleOrder.append(item.sample)
             matrix.append([getattr(item, d) for d in dimensions])
 
-        nOrder = np.array(order)
+        # Scale everything
         nMatrix = np.array(matrix)
-        
-        # Scale erything
-        scaled = preprocessing.scale(nMatrix)
-        nMatrix = np.array(scaled)
+        nMatrix = preprocessing.scale(nMatrix)
 
         # Perform PCA
         pca = PCA()
@@ -61,22 +65,20 @@ class Command(BaseCommand):
 
         # Save the calculated PCA dimensions as new objects related to corresponding sample
         for i in range(len(y)):
-            
             try:
                 newPca = AnalysisPCA.objects.get(sample=sampleOrder[i])
             except AnalysisPCA.DoesNotExist:
                 newPca = AnalysisPCA()
-                newPca.sample = sampleOrder[i] 
-
+                newPca.sample = sampleOrder[i]
             for j in range(len(y[i])):
-                setattr(newPca, "dim_%s" % (j + 1), y[i][j])  
+                setattr(newPca, "dim_%s" % (j + 1), y[i][j])
             newPca.save()
 
-
+        print "Explained Variance Ratio"
         print pca.explained_variance_ratio_
+
+        print "\nExplained Variance"
         print pca.explained_variance_
+
+        print "\nComponent Weightings"
         print pca.components_
-
-        #py.offline.plot([trace], filename='plot2.html')
-
-        
