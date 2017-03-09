@@ -13,11 +13,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         
         fields = [
-            'duration',
             'equal_loudness',
-            'spectral_centroid',
-            'temporal_centroid',
             'rms',
+            'spectral_centroid',
+            'spectral_centroid_1',
+            'spectral_centroid_2',
+            'temporal_centroid',
             'spectral_kurtosis',
             'pitch_salience'
         ]

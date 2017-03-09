@@ -13,13 +13,13 @@ from analysis.models import Sample, Analysis, AnalysisRobustScale, AnalysisPCA, 
 #import plotly.graph_objs as go
 
 class Command(BaseCommand):
-    help = 'Mark Outliers'
+    help = 'Principal Component Analysis'
     
 
     # Executes on command runtime
     def handle(self, *args, **options):
         
-        # Dimensions to consider in outlier calculation
+        # Dimensions to consider in PCA
         dimensions = [
             #'duration',
             'equal_loudness',
@@ -32,7 +32,7 @@ class Command(BaseCommand):
             'pitch_salience'
         ]
 
-        # Get all the samples
+        # Get all the analysis objects for a particular sample type
         analysisObjects = Analysis.objects.filter(
             sample__sample_type='sn', 
             outlier=False
@@ -58,9 +58,8 @@ class Command(BaseCommand):
         pca = PCA()
         pca.fit(nMatrix)
         y = pca.transform(nMatrix)
-         
 
-        newList = []
+        # Save the calculated PCA dimensions as new objects related to corresponding sample
         for i in range(len(y)):
             
             try:

@@ -92,16 +92,16 @@ class AnalysisZ(models.Model):
     spectral_kurtosis = models.FloatField(blank=True, null=True)
     pitch_salience = models.FloatField(blank=True, null=True)
 
-class AnalysisRobustScale(models.Model):
+class AnalysisMinMax(models.Model):
 
     sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
 
-    duration = models.FloatField(blank=True, null=True)
+    #duration = models.FloatField(blank=True, null=True)
     #loudness = models.FloatField(blank=True, null=True)
     equal_loudness = models.FloatField(blank=True, null=True)
     spectral_centroid = models.FloatField(blank=True, null=True)
-    #spectral_centroid_1 = models.FloatField(blank=True, null=True)
-    #spectral_centroid_2 = models.FloatField(blank=True, null=True)
+    spectral_centroid_1 = models.FloatField(blank=True, null=True)
+    spectral_centroid_2 = models.FloatField(blank=True, null=True)
     temporal_centroid = models.FloatField(blank=True, null=True)
     rms = models.FloatField(blank=True, null=True)
     spectral_kurtosis = models.FloatField(blank=True, null=True)
