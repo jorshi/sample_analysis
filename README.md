@@ -28,9 +28,9 @@ Project should now be ready to start loading in samples and running feature anal
     --tags any tag words to associate with this directory of samples, multiple tags are comma separated
 
 It is assumed that samples are in the following folder structure:
-`DrumSamples/SamplePackName/kit_x/kick/samples.wav`<br />
+`DrumSamples/SamplePackName/kit_x/kick/sample_name.wav`<br />
 or<br />
-`DrumSamples/SamplePackName/kick/samples.wav`<br />
+`DrumSamples/SamplePackName/kick/sample_name.wav`<br />
 if there are not multiple kits.
 
 Replace kick with snare for snare drum samples.
