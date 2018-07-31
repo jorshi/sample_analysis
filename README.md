@@ -9,7 +9,7 @@ Requirments: Python 2.7, MySQL, Essentia
 
 Essentia: http://essentia.upf.edu/documentation/installing.html
 
-Install python project requirements with pip:  `pip -r ./requirements.txt`
+Install python project requirements with pip:  `pip install -r ./requirements.txt`
 
 ### Setup DB
 
