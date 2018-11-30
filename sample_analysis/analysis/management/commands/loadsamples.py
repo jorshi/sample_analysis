@@ -120,7 +120,7 @@ class Command(BaseCommand):
     def onsetDetection(self, samplePath):
 
         # Get audio from file
-        loader = es.MonoLoader(filename=samplePath)
+        loader = es.MonoLoader(filename=samplePath.encode('utf-8'))
         audio = loader()
 
         startStop = es.StartStopSilence()
