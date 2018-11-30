@@ -1,12 +1,28 @@
-python ./manage.py runanalysis equal_loudness
-python ./manage.py runanalysis rms
-echo "Normalizing RMS\n"
-python ./manage.py normalizerms
-python ./manage.py runanalysis temporal_centroid
-python ./manage.py runanalysis spectral_centroid
-python ./manage.py runanalysis spectral_centroid_1
-python ./manage.py runanalysis spectral_centroid_2
-python ./manage.py runanalysis spectral_kurtosis
-python ./manage.py runanalysis pitch_salience
-echo "Calculating sample durations\n"
-python ./manage.py duration
+echo "Running full analsis\n"
+echo "25ms Window - 20% of attack\n"
+python ./manage.py run_analysis_full --window_length 25 --window_start 20
+echo "100ms Window - 20% of attack\n"
+python ./manage.py run_analysis_full --window_length 100 --window_start 20
+echo "25oms Window - 20% of attack\n"
+python ./manage.py run_analysis_full --window_length 250 --window_start 20
+echo "500ms Window - 20% of attack\n"
+python ./manage.py run_analysis_full --window_length 500 --window_start 20
+echo "25ms Window - 50% of attack\n"
+python ./manage.py run_analysis_full --window_length 25 --window_start 50
+echo "100ms Window - 50% of attack\n"
+python ./manage.py run_analysis_full --window_length 100 --window_start 50
+echo "250ms Window - 50% of attack\n"
+python ./manage.py run_analysis_full --window_length 250 --window_start 50
+echo "500ms Window - 50% of attack\n"
+python ./manage.py run_analysis_full --window_length 500 --window_start 50
+echo "25ms Window - 100% of attack\n"
+python ./manage.py run_analysis_full --window_length 25 --window_start 100
+echo "100ms Window - 100% of attack\n"
+python ./manage.py run_analysis_full --window_length 100 --window_start 100
+echo "250ms Window - 100% of attack\n"
+python ./manage.py run_analysis_full --window_length 250 --window_start 100
+echo "500ms Window - 100% of attack\n"
+python ./manage.py run_analysis_full --window_length 500 --window_start 100
+echo "Full Sample Length\n"
+python ./manage.py run_analysis_full
+
