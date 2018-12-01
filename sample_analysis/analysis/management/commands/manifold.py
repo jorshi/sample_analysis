@@ -12,10 +12,10 @@ import math
 import pandas as pd
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
+import sklearn.manifold as manifold
 import scipy.stats as stats
 from django.core.management.base import BaseCommand, CommandError
-from analysis.models import Sample, Analysis, AnalysisFull, AnalysisTSNE
+from analysis.models import Sample, Analysis, AnalysisFull, Manifold
 
 
 class Command(BaseCommand):
@@ -125,7 +125,11 @@ class Command(BaseCommand):
         nMatrix = preprocessing.scale(nMatrix)
         
         manifoldMethod = {
-            "tsne": TSNE,
+            "tsne": manifold.TSNE,
+            "isomap": manifold.Isomap,
+            "locally_linear": manifold.LocallyLinearEmbedding,
+            "mds": manifold.MDS,
+            "spectral": manifold.SpectralEmbedding,
         }
         
         # Perform Dimension Reduction
@@ -137,20 +141,22 @@ class Command(BaseCommand):
         # Save the calculated TSNE dimensions as new objects related to corresponding sample
         for i in range(len(y)):
             try:
-                newTsne = AnalysisTSNE.objects.get(
+                newManifold = Manifold.objects.get(
+                    method=options['manifold_method'][0],
                     sample=sampleOrder[i],
                     window_length=options['window_length'][0],
                     window_start=options['window_start'][0]
                 )
-            except AnalysisTSNE.DoesNotExist:
-                newTsne = AnalysisTSNE(
+            except Manifold.DoesNotExist:
+                newManifold = Manifold(
+                    method=options['manifold_method'][0],
                     sample = sampleOrder[i],
                     window_length = options['window_length'][0],
                     window_start = options['window_start'][0]
                 )
             for j in range(len(y[i])):
-                setattr(newTsne, "dim_%s" % (j + 1), y[i][j])
-            newTsne.save()
+                setattr(newManifold, "dim_%s" % (j + 1), y[i][j])
+            newManifold.save()
 
     
     """
