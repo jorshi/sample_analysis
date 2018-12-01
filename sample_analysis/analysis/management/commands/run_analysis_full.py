@@ -73,10 +73,10 @@ class Command(BaseCommand):
         for sample in samples:
             # Get audio and run loudness analysis
             try:
-                loader = es.MonoLoader(filename=sample.path)
+                loader = es.MonoLoader(filename=sample.path.encode('utf-8'))
                 neqAudio = loader()
 
-                eqLoader = es.EqloudLoader(filename=sample.path)
+                eqLoader = es.EqloudLoader(filename=sample.path.encode('utf-8'))
                 eqAudio = eqLoader()
 
                 # Trim the audio clip
