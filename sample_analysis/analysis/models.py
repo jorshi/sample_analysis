@@ -132,6 +132,23 @@ class AnalysisPCA(models.Model):
         unique_together = (('sample', 'window_length', 'window_start'),)
 
 
+class Manifold(models.Model):
+
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
+    window_length = models.IntegerField(blank=True, null=True)
+    window_start = models.IntegerField(blank=True, null=True)
+
+    method = models.CharField(max_length=200)
+
+    dim_1 = models.FloatField(blank=True, null=True)
+    dim_2 = models.FloatField(blank=True, null=True)
+    dim_3 = models.FloatField(blank=True, null=True)
+    dim_4 = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        unique_together = (('sample', 'window_length', 'window_start', 'method'),)
+
+
 class AnalysisFull(models.Model):
 
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
