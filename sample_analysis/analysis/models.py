@@ -69,50 +69,6 @@ class Sample(models.Model):
         return "%s %s" % (self.kit.__unicode__(), self.sample_type)
 
 
-class Analysis(models.Model):
-
-    sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
-    outlier = models.BooleanField(default=False)
-
-    duration = models.FloatField(blank=True, null=True)
-    equal_loudness = models.FloatField(blank=True, null=True)
-    spectral_centroid = models.FloatField(blank=True, null=True)
-    spectral_centroid_1 = models.FloatField(blank=True, null=True)
-    spectral_centroid_2 = models.FloatField(blank=True, null=True)
-    temporal_centroid = models.FloatField(blank=True, null=True)
-    rms = models.FloatField(blank=True, null=True)
-    spectral_kurtosis = models.FloatField(blank=True, null=True)
-    pitch_salience = models.FloatField(blank=True, null=True)
-
-class AnalysisZ(models.Model):
-
-    sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
-
-    duration = models.FloatField(blank=True, null=True)
-    #loudness = models.FloatField(blank=True, null=True)
-    equal_loudness = models.FloatField(blank=True, null=True)
-    spectral_centroid = models.FloatField(blank=True, null=True)
-    #spectral_centroid_1 = models.FloatField(blank=True, null=True)
-    #spectral_centroid_2 = models.FloatField(blank=True, null=True)
-    temporal_centroid = models.FloatField(blank=True, null=True)
-    rms = models.FloatField(blank=True, null=True)
-    spectral_kurtosis = models.FloatField(blank=True, null=True)
-    pitch_salience = models.FloatField(blank=True, null=True)
-
-class AnalysisMinMax(models.Model):
-
-    sample = models.OneToOneField(Sample, on_delete=models.CASCADE)
-
-    equal_loudness = models.FloatField(blank=True, null=True)
-    spectral_centroid = models.FloatField(blank=True, null=True)
-    spectral_centroid_1 = models.FloatField(blank=True, null=True)
-    spectral_centroid_2 = models.FloatField(blank=True, null=True)
-    temporal_centroid = models.FloatField(blank=True, null=True)
-    rms = models.FloatField(blank=True, null=True)
-    spectral_kurtosis = models.FloatField(blank=True, null=True)
-    pitch_salience = models.FloatField(blank=True, null=True)
-
-
 class AnalysisPCA(models.Model):
 
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
@@ -123,10 +79,6 @@ class AnalysisPCA(models.Model):
     dim_2 = models.FloatField(blank=True, null=True)
     dim_3 = models.FloatField(blank=True, null=True)
     dim_4 = models.FloatField(blank=True, null=True)
-    dim_5 = models.FloatField(blank=True, null=True)
-    dim_6 = models.FloatField(blank=True, null=True)
-    dim_7 = models.FloatField(blank=True, null=True)
-    dim_8 = models.FloatField(blank=True, null=True)
 
     class Meta:
         unique_together = (('sample', 'window_length', 'window_start'),)
