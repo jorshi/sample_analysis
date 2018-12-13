@@ -1,9 +1,8 @@
 """
-Command line tool for running Primary Component Analysis on
-analysis objects of a selected sample type
+Sample type classification
 
 usage:
-    python ./manage.py pca sample_type
+    python ./manage.py classifier_sample_type [window_length] [window_start]
 """
 
 import sys

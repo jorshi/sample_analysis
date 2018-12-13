@@ -5,7 +5,7 @@ variance across samples for each sample by selecting a different
 window length and size for each feature.
 
 usage:
-    python ./manage.py classifier_dm_window.py [window_length]
+    python ./manage.py classifier_dm_window.py [sample_type] [window_length]
 """
 
 import sys
