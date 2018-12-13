@@ -3,7 +3,7 @@ echo "25ms Window - 20% of attack\n"
 python ./manage.py run_analysis_full --window_length 25 --window_start 20
 echo "100ms Window - 20% of attack\n"
 python ./manage.py run_analysis_full --window_length 100 --window_start 20
-echo "25oms Window - 20% of attack\n"
+echo "250ms Window - 20% of attack\n"
 python ./manage.py run_analysis_full --window_length 250 --window_start 20
 echo "500ms Window - 20% of attack\n"
 python ./manage.py run_analysis_full --window_length 500 --window_start 20
