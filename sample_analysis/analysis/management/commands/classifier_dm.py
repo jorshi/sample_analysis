@@ -1,9 +1,10 @@
 """
-Command line tool for running Primary Component Analysis on
-analysis objects of a selected sample type
+Command for running drum machine classification
+Note that the drum machines are hard coded into this file,
+they will need to be updated by the user.
 
 usage:
-    python ./manage.py pca sample_type
+    python ./manage.py classifier dm [sample_type] [window_length] [window_start]
 """
 
 import sys
@@ -17,17 +18,17 @@ from sklearn.linear_model import Perceptron
 from sklearn.ensemble import RandomForestClassifier
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, Variance
-from analysis.models import Sample, Analysis, AnalysisPCA, AnalysisFull
+from analysis.models import Sample, AnalysisPCA, AnalysisFull
 
 
 class Command(BaseCommand):
-    help = 'Sample Type Classification'
+    help = 'Drum Machine Classification'
 
     # Override of the add_argument method
     def add_arguments(self, parser):
 
         # Required argument for the type of analysis to run
-        #parser.add_argument('sample_type', nargs=1, type=str)
+        parser.add_argument('sample_type', nargs=1, type=str)
         parser.add_argument('window_length', nargs=1, type=int)
         parser.add_argument('window_start', nargs=1, type=int)
 
@@ -98,15 +99,27 @@ class Command(BaseCommand):
         ]
 
         # Get all the analysis objects for a particular sample type
-        analysisObjects = AnalysisFull.objects.filter(
-            window_length=options['window_length'][0],
-            window_start=options['window_start'][0],
-            sample__sample_type='sn',
-            sample__kit__sample_pack__in=[9,12,22,146,149,176,186,195],
-            #sample__kit__sample_pack__in=[9,12,22,137,146,149,176,186,195],
-            #sample__sample_type='ki',
-            #sample__kit__sample_pack__in=[9,12,135,146,149,186],
-        )
+        if options['sample_type'][0] == 'ki':
+
+            analysisObjects = AnalysisFull.objects.filter(
+                window_length=options['window_length'][0],
+                sample__sample_type='ki',
+                sample__kit__sample_pack__in=[9,12,135,146,149,186],
+                sample__exclude=False,
+            )
+
+        elif options['sample_type'][0] == 'sn':
+
+            analysisObjects = AnalysisFull.objects.filter(
+                window_length=options['window_length'][0],
+                sample__sample_type='sn',
+                sample__kit__sample_pack__in=[9,12,22,146,149,176,186,195],
+                sample__exclude=False,
+            )
+
+        else:
+            self.stderr.write("Sample type must be 'ki' or 'sn'")
+            exit()
 
         data = []
         target = []

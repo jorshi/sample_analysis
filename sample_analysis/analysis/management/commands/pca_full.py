@@ -14,7 +14,7 @@ from sklearn import preprocessing
 from sklearn.decomposition import PCA
 import scipy.stats as stats
 from django.core.management.base import BaseCommand, CommandError
-from analysis.models import Sample, Analysis, AnalysisPCA, AnalysisFull
+from analysis.models import Sample, AnalysisPCA, AnalysisFull
 
 
 class Command(BaseCommand):

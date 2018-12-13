@@ -1,9 +1,11 @@
 """
-Command line tool for running Primary Component Analysis on
-analysis objects of a selected sample type
+Classification of sample manufacturers
+
+** Note that the manufacturers that are to be classified need to be
+   added in manually to this file
 
 usage:
-    python ./manage.py pca sample_type
+    python ./manage.py classifier_manu [sample_type] [window_length] [window_start]
 """
 
 import sys
@@ -18,7 +20,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.dummy import DummyClassifier
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, Variance
-from analysis.models import Sample, Analysis, AnalysisPCA, AnalysisFull
+from analysis.models import Sample, AnalysisPCA, AnalysisFull
 
 
 class Command(BaseCommand):
@@ -28,7 +30,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
 
         # Required argument for the type of analysis to run
-        #parser.add_argument('sample_type', nargs=1, type=str)
+        parser.add_argument('sample_type', nargs=1, type=str)
         parser.add_argument('window_length', nargs=1, type=int)
         parser.add_argument('window_start', nargs=1, type=int)
 
@@ -107,8 +109,8 @@ class Command(BaseCommand):
         analysisObjects = AnalysisFull.objects.filter(
             window_length=options['window_length'][0],
             window_start=options['window_start'][0],
-            sample__sample_type='ki',
-            sample__kit__sample_pack__manufacturer__in=[1,2,3,4,6,7],
+            sample__sample_type=options['sample_type'][0],
+            sample__kit__sample_pack__manufacturer__in=[1,2],
         )
 
         data = []
