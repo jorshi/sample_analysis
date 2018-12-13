@@ -32,6 +32,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         self.tags = []
+        self.samplesLoaded = 0
+
         if options['tags'] is not None:
             for tag in options['tags'].split(','):
                 try:
@@ -41,10 +43,14 @@ class Command(BaseCommand):
                     tagObject.save()
 
                 self.tags.append(tagObject)
+        
+        self.stdout.write("Samples Loaded: %d " % self.samplesLoaded, ending='\r')
+        self.stdout.flush()
 
         for directory in options['directory']:
             self.exploreSamplePack(directory, os.path.abspath(directory))
 
+        self.stdout.write("Samples Loaded: %d" % self.samplesLoaded)
     
     def exploreSamplePack(self, name, root, prev=None):
 
@@ -87,6 +93,10 @@ class Command(BaseCommand):
                                             start_time=startTime, stop_time=stopTime)
                         
                         sample.save()
+                        
+                        self.samplesLoaded = self.samplesLoaded + 1
+                        self.stdout.write("Samples Loaded: %d " % self.samplesLoaded, ending='\r')
+                        self.stdout.flush()
 
                 # Assuming that no sample packs start with kit (:/)
                 elif item.lower().startswith('kit_'):

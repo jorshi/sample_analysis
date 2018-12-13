@@ -15,7 +15,7 @@ import essentia.standard as es
 import numpy as np
 import math
 from django.core.management.base import BaseCommand, CommandError
-from analysis.models import Sample, Analysis, AnalysisFull
+from analysis.models import Sample, AnalysisFull
 
 import pickle
 
