@@ -1,6 +1,8 @@
 """
 Command line tool for running Primary Component Analysis on
-analysis objects of a selected sample type
+analysis objects of a selected sample type. This version of PCA selects
+distinct windows for each feature so that the variance across samples for
+that feature is maximazed.
 
 usage:
     python ./manage.py pca sample_type
@@ -15,7 +17,7 @@ from sklearn.decomposition import PCA
 import scipy.stats as stats
 from django.db.models import Count, Variance
 from django.core.management.base import BaseCommand, CommandError
-from analysis.models import Sample, Analysis, AnalysisPCA, AnalysisFull
+from analysis.models import Sample, AnalysisPCA, AnalysisFull
 
 
 class Command(BaseCommand):

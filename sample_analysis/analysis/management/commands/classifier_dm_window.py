@@ -1,9 +1,11 @@
 """
-Command line tool for running Primary Component Analysis on
-analysis objects of a selected sample type
+Version of classifier script that classifies different drum machines
+using the max variance method developed here that maximizes the
+variance across samples for each sample by selecting a different
+window length and size for each feature.
 
 usage:
-    python ./manage.py pca sample_type
+    python ./manage.py classifier_dm_window.py [window_length]
 """
 
 import sys
@@ -17,17 +19,19 @@ from sklearn.linear_model import Perceptron
 from sklearn.ensemble import RandomForestClassifier
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, Variance
-from analysis.models import Sample, Analysis, AnalysisPCA, AnalysisFull
+from analysis.models import Sample, AnalysisPCA, AnalysisFull
 
 
 class Command(BaseCommand):
-    help = 'Sample Type Classification'
+    help = """Drum Machine Classifier using Maximum Variance - Please note that the drum machines (samplepacks) are hard
+    coded into the python management file, please see the python file for this command
+    /analysis/management/command/classifier_dm_window.py"""
 
     # Override of the add_argument method
     def add_arguments(self, parser):
 
         # Required argument for the type of analysis to run
-        #parser.add_argument('sample_type', nargs=1, type=str)
+        parser.add_argument('sample_type', nargs=1, type=str)
         parser.add_argument('window_length', nargs=1, type=int)
 
     # Executes on command runtime
@@ -95,19 +99,34 @@ class Command(BaseCommand):
             'spectral_kurtosis_dev',
             'spectral_spread_dev'
         ]
-
+        
         # Get all the analysis objects for a particular sample type
-        analysisObjects = AnalysisFull.objects.filter(
-            window_length=options['window_length'][0],
-            sample__sample_type='sn',
-            sample__kit__sample_pack__in=[9,12,22,146,149,176,186,195],
-            #sample__kit__sample_pack__in=[9,12,22,137,146,149,176,186,195],
-            #sample__sample_type='ki',
-            #sample__kit__sample_pack__in=[9,12,135,146,149,186],
-            sample__exclude=False,
-        )
 
-        analysisVar = AnalysisFull.objects.filter(sample__sample_type='sn')
+        if options['sample_type'][0] == 'ki':
+
+            analysisObjects = AnalysisFull.objects.filter(
+                window_length=options['window_length'][0],
+                sample__sample_type='ki',
+                sample__kit__sample_pack__in=[9,12,135,146,149,186],
+                sample__exclude=False,
+            )
+
+            analysisVar = AnalysisFull.objects.filter(sample__sample_type='ki')
+
+        elif options['sample_type'][0] == 'sn':
+
+            analysisObjects = AnalysisFull.objects.filter(
+                window_length=options['window_length'][0],
+                sample__sample_type='sn',
+                sample__kit__sample_pack__in=[9,12,22,146,149,176,186,195],
+                sample__exclude=False,
+            )
+
+            analysisVar = AnalysisFull.objects.filter(sample__sample_type='sn')
+
+        else:
+            self.stderr.write("Sample type must be 'ki' or 'sn'")
+            exit()
 
         maxVarWindows = {}
         count = {}
