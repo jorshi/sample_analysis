@@ -1,9 +1,9 @@
 """
-Command line tool for running Primary Component Analysis on
-analysis objects of a selected sample type
+Sample type classification using maximum variance method
+for choosing window size and length.  
 
 usage:
-    python ./manage.py pca sample_type
+    python ./manage.py classifier_type_window [window_length]
 """
 
 import sys
@@ -17,7 +17,7 @@ from sklearn.linear_model import Perceptron
 from sklearn.ensemble import RandomForestClassifier
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, Variance
-from analysis.models import Sample, Analysis, AnalysisPCA, AnalysisFull
+from analysis.models import Sample, AnalysisPCA, AnalysisFull
 
 
 class Command(BaseCommand):
