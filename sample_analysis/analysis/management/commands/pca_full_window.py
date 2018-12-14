@@ -17,7 +17,7 @@ from sklearn.decomposition import PCA
 import scipy.stats as stats
 from django.db.models import Count, Variance
 from django.core.management.base import BaseCommand, CommandError
-from analysis.models import Sample, AnalysisPCA, AnalysisFull
+from analysis.models import Sample, AnalysisPCA, AnalysisFull, PCAStat
 
 
 class Command(BaseCommand):
@@ -144,10 +144,10 @@ class Command(BaseCommand):
         nMatrix = preprocessing.scale(nMatrix)
         gKMO, vKMO = self.globalKMO(nMatrix)
 
-        retain = np.where(vKMO > 0.6)
-        nMatrix = nMatrix[:,retain[0]]
-
-        print "Removing %s" % np.array(dimensions)[np.where(vKMO <= 0.6)[0]]
+        # Uncomment for removal of dimensions that don't have a KMO larger than 0.6
+        #retain = np.where(vKMO > 0.6)
+        #nMatrix = nMatrix[:,retain[0]]
+        #print "Removing %s" % np.array(dimensions)[np.where(vKMO <= 0.6)[0]]
 
         g2KMO, v2KMO = self.globalKMO(nMatrix)
         print stats.levene(*nMatrix)
@@ -180,13 +180,31 @@ class Command(BaseCommand):
         print "Explained Variance Ratio"
         print pca.explained_variance_ratio_
         print sum(pca.explained_variance_ratio_[0:2])*100
+    
+        try:
+            newPcaStat = PCAStat.objects.get(
+                sample_type=options['sample_type'][0],
+                window_length=-1,
+                window_start=-1
+            )
+        except PCAStat.DoesNotExist:
+            newPcaStat = PCAStat(
+                sample_type=options['sample_type'][0],
+                window_length = -1,
+                window_start = -1
+            )
+
+        for j in range(len(pca.explained_variance_ratio_)):
+            setattr(newPcaStat, "dim_%s_variance_ratio" % (j + 1), pca.explained_variance_ratio_[j])
+        newPcaStat.variance_sum_2d = sum(pca.explained_variance_ratio_[0:2])*100
+        newPcaStat.save()
 
         print "\nExplained Variance"
         print pca.explained_variance_
 
         print "\nComponent Weightings"
         #print pca.components_
-        np.savetxt('output.csv', pca.components_, delimiter=",")
+        #np.savetxt('output.csv', pca.components_, delimiter=",")
         #print self.varimax(pca.components_)
 
 

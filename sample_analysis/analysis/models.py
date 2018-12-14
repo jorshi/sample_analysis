@@ -86,6 +86,7 @@ class AnalysisPCA(models.Model):
 
 class PCAStat(models.Model):
 
+    sample_type = models.CharField(max_length=2, blank=True, null=True)
     window_length = models.IntegerField(blank=True, null=True)
     window_start = models.IntegerField(blank=True, null=True)
 
@@ -97,7 +98,7 @@ class PCAStat(models.Model):
     variance_sum_2d = models.FloatField(blank=True, null=True)
 
     class Meta:
-        unique_together = (('window_length', 'window_start'),)
+        unique_together = (('sample_type', 'window_length', 'window_start'),)
 
 
 class Manifold(models.Model):
