@@ -16,6 +16,7 @@ from sklearn.decomposition import PCA
 from sklearn.svm import SVC
 from sklearn.linear_model import Perceptron
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.dummy import DummyClassifier
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, Variance
 from analysis.models import Sample, AnalysisPCA, AnalysisFull
@@ -34,6 +35,11 @@ class Command(BaseCommand):
 
     # Executes on command runtime
     def handle(self, *args, **options):
+
+        choices = [x[0] for x in Sample.SAMPLE_TYPE_CHOICES]
+        if options['sample_type'][0] not in choices:
+            print "Sample type must by one of %s" % choices
+            sys.exit(1)
 
         dimensions = [
             'bark_1_mean','bark_2_mean','bark_3_mean','bark_4_mean','bark_5_mean','bark_6_mean','bark_7_mean',
@@ -103,8 +109,9 @@ class Command(BaseCommand):
 
             analysisObjects = AnalysisFull.objects.filter(
                 window_length=options['window_length'][0],
+                window_start=options['window_start'][0],
                 sample__sample_type='ki',
-                sample__kit__sample_pack__in=[9,12,135,146,149,186],
+                sample__kit__sample_pack__in=[155,100,75,92,132,144],
                 sample__exclude=False,
             )
 
@@ -112,8 +119,9 @@ class Command(BaseCommand):
 
             analysisObjects = AnalysisFull.objects.filter(
                 window_length=options['window_length'][0],
+                window_start=options['window_start'][0],
                 sample__sample_type='sn',
-                sample__kit__sample_pack__in=[9,12,22,146,149,176,186,195],
+                sample__kit__sample_pack__in=[155,100,35,92,132,48,144,197],
                 sample__exclude=False,
             )
 
@@ -132,28 +140,42 @@ class Command(BaseCommand):
             data.append([getattr(item, d) for d in dimensions])
 
         (unique, counts) = np.unique(target, return_counts=True)
-        print unique, counts
-        print sum(counts)
+
+        print "\nClass ids: %s" % unique
+        print "Items per class: %s" % counts
+        print "Total items being classified: %s" % sum(counts)
         
         # Scale everything
         dataScaled = np.array(data)
         minMaxScaler = preprocessing.MinMaxScaler()
         dataScaled = minMaxScaler.fit_transform(dataScaled)
-        
-        print "Running SVC Classifier"
+
+        print "\nBaseline"
+        dummyClass = DummyClassifier()
+        pred = cross_val_predict(dummyClass, dataScaled, target, cv=10)
+        print accuracy_score(target, pred)
+        print confusion_matrix(target, pred)
+
+        print "\nRunning SVC Classifier"
         svc = SVC()
         pred = cross_val_predict(svc, dataScaled, target, cv=10)
+        average = accuracy_score(target, pred)
         print accuracy_score(target, pred)
         print confusion_matrix(target, pred)
 
-        print "Running Perceptron Classifier"
+        print "\nRunning Perceptron Classifier"
         perceptron = Perceptron()
         pred = cross_val_predict(perceptron, dataScaled, target, cv=10)
+        average = average + accuracy_score(target, pred)
         print accuracy_score(target, pred)
         print confusion_matrix(target, pred)
 
-        print "Running Random Forest Classifier"
+        print "\nRunning Random Forest Classifier"
         randomForest = RandomForestClassifier()
         pred = cross_val_predict(randomForest, dataScaled, target, cv=10)
+        average = average + accuracy_score(target, pred)
         print accuracy_score(target, pred)
         print confusion_matrix(target, pred)
+
+        print "\nAverage Classification Score: %s" % (average / 3.0)
+
