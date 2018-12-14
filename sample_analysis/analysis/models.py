@@ -84,13 +84,47 @@ class AnalysisPCA(models.Model):
         unique_together = (('sample', 'window_length', 'window_start'),)
 
 
+class PCAStat(models.Model):
+
+    window_length = models.IntegerField(blank=True, null=True)
+    window_start = models.IntegerField(blank=True, null=True)
+
+    dim_1_variance_ratio = models.FloatField(blank=True, null=True)
+    dim_2_variance_ratio = models.FloatField(blank=True, null=True)
+    dim_3_variance_ratio = models.FloatField(blank=True, null=True)
+    dim_4_variance_ratio = models.FloatField(blank=True, null=True)
+
+    variance_sum_2d = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        unique_together = (('window_length', 'window_start'),)
+
+
 class Manifold(models.Model):
+
+    TSNE = "tsne"
+    ISOMAP = "isomap"
+    LOCALLYLINEAR = "locally_linear"
+    MDS = "mds"
+    SPECTRAL = "spectral"
+    
+    MANIFOLD_METHODS = (
+        (TSNE, 'TSNE'),
+        (ISOMAP, 'Isomap'),
+        (LOCALLYLINEAR, 'Locally Linear'),
+        (MDS, 'MDS'),
+        (SPECTRAL, 'Spectral'),
+    )
 
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     window_length = models.IntegerField(blank=True, null=True)
     window_start = models.IntegerField(blank=True, null=True)
 
-    method = models.CharField(max_length=200)
+    method = models.CharField(
+        max_length=20,
+        choices=MANIFOLD_METHODS,
+        default=TSNE
+    )
 
     dim_1 = models.FloatField(blank=True, null=True)
     dim_2 = models.FloatField(blank=True, null=True)

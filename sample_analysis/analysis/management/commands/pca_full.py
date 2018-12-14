@@ -14,7 +14,7 @@ from sklearn import preprocessing
 from sklearn.decomposition import PCA
 import scipy.stats as stats
 from django.core.management.base import BaseCommand, CommandError
-from analysis.models import Sample, AnalysisPCA, AnalysisFull
+from analysis.models import Sample, AnalysisPCA, AnalysisFull, PCAStat
 
 
 class Command(BaseCommand):
@@ -160,6 +160,22 @@ class Command(BaseCommand):
         print "Explained Variance Ratio"
         print pca.explained_variance_ratio_
         print sum(pca.explained_variance_ratio_[0:2])*100
+
+        try:
+            newPcaStat = PCAStat.objects.get(
+                window_length=options['window_length'][0],
+                window_start=options['window_start'][0]
+            )
+        except PCAStat.DoesNotExist:
+            newPcaStat = PCAStat(
+                window_length = options['window_length'][0],
+                window_start = options['window_start'][0]
+            )
+
+        for j in range(len(pca.explained_variance_ratio_)):
+            setattr(newPcaStat, "dim_%s_variance_ratio" % (j + 1), pca.explained_variance_ratio_[j])
+        newPcaStat.variance_sum_2d = sum(pca.explained_variance_ratio_[0:2])*100
+        newPcaStat.save()
 
         print "\nExplained Variance"
         print pca.explained_variance_
