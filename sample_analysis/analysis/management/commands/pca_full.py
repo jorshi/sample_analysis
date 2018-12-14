@@ -163,11 +163,13 @@ class Command(BaseCommand):
 
         try:
             newPcaStat = PCAStat.objects.get(
+                sample_type=options['sample_type'][0],
                 window_length=options['window_length'][0],
                 window_start=options['window_start'][0]
             )
         except PCAStat.DoesNotExist:
             newPcaStat = PCAStat(
+                sample_type=options['sample_type'][0],
                 window_length = options['window_length'][0],
                 window_start = options['window_start'][0]
             )
@@ -182,7 +184,7 @@ class Command(BaseCommand):
 
         print "\nComponent Weightings"
         #print pca.components_
-        np.savetxt('output.csv', pca.components_, delimiter=",")
+        #np.savetxt('output.csv', pca.components_, delimiter=",")
         #print self.varimax(pca.components_)
 
 
