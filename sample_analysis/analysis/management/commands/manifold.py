@@ -1,9 +1,9 @@
 """
-Command line tool for running Primary Component Analysis on
-analysis objects of a selected sample type
+Manifold Dimension Reduction
+
 
 usage:
-    python ./manage.py pca sample_type
+    python ./manage.py manifold [manifold_method] 
 """
 
 import sys
@@ -15,7 +15,7 @@ from sklearn.decomposition import PCA
 import sklearn.manifold as manifold
 import scipy.stats as stats
 from django.core.management.base import BaseCommand, CommandError
-from analysis.models import Sample, Analysis, AnalysisFull, Manifold
+from analysis.models import Sample, AnalysisFull, Manifold
 
 
 class Command(BaseCommand):
@@ -35,7 +35,12 @@ class Command(BaseCommand):
 
         choices = [x[0] for x in Sample.SAMPLE_TYPE_CHOICES]
         if options['sample_type'][0] not in choices:
-            print "Sample type must by one of %s" % choices
+            print "Sample type must be one of %s" % choices
+            sys.exit(1)
+
+        methods = [x[0] for x in Manifold.MANIFOLD_METHODS]
+        if options['manifold_method'][0] not in methods:
+            print "Manifold method must be one of %s" % methods
             sys.exit(1)
 
         dimensions = [
@@ -131,12 +136,17 @@ class Command(BaseCommand):
             "mds": manifold.MDS,
             "spectral": manifold.SpectralEmbedding,
         }
+
+        self.stdout.write("Performing %s dimension reduction on %d samples" % (
+            options['manifold_method'][0],
+            len(sampleOrder)
+        ))
         
         # Perform Dimension Reduction
-        method = manifoldMethod[options['manifold_method'][0]](n_components=4)
+        method = manifoldMethod[options['manifold_method'][0]](n_components=2)
         y = method.fit_transform(nMatrix)
-    
-        print y.shape
+
+        self.stdout.write("Saving reduced dimensions to database")
 
         # Save the calculated TSNE dimensions as new objects related to corresponding sample
         for i in range(len(y)):
@@ -156,71 +166,5 @@ class Command(BaseCommand):
                 )
             for j in range(len(y[i])):
                 setattr(newManifold, "dim_%s" % (j + 1), y[i][j])
+
             newManifold.save()
-
-    
-    """
-    Bartlett's Test of Sphericity
-    """
-    def bartlett(self, matrix):
-
-        d = pd.DataFrame(matrix)
-        dCorr = d.corr()
-
-        n, p = matrix.shape
-
-        chi2 = -(n - 1 - ((2*p + 5) / 6)) * np.log(np.linalg.det(dCorr.values))
-        ddl = p*(p-1)/2
-    
-        print chi2
-        print ddl
-        pvalue = stats.chi2.pdf(chi2, ddl)
-
-        print pvalue
-
-    def globalKMO(self, matrix):
-
-        dCorr = np.corrcoef(matrix, rowvar=False)
-
-        # Inverse Correlation Matrix
-        corrInv = np.linalg.inv(dCorr)
-
-        corrInvRows, corrInvCols = corrInv.shape
-        
-        A = np.ones(corrInv.shape)
-
-        for i in range(0, corrInvRows, 1):
-            for j in range(i, corrInvCols, 1):
-                A[i,j] = -corrInv[i,j] / (math.sqrt(corrInv[i,i] * corrInv[j,j]))
-                A[j,i] = A[i,j]
-
-        matrixCorr = np.asarray(dCorr)
-
-        kmoNum = np.sum(np.square(matrixCorr)) - np.sum(np.square(np.diagonal(matrixCorr)))
-        kmoDenom = kmoNum + (np.sum(np.square(A)) - np.sum(np.square(np.diagonal(A))))
-
-        # Per Variable
-        kmoVars = np.zeros(len(dCorr))
-
-        for j in range(0, len(dCorr)):
-            kmoJNum = np.sum(np.square(matrixCorr[:,j])) - np.square(matrixCorr[j,j])
-            kmoJDenom = kmoJNum + (np.sum(np.square(A[:,j])) - np.square(A[j,j]))
-            kmoVars[j] = kmoJNum / kmoJDenom
-
-        return (kmoNum / kmoDenom, kmoVars)
-
-
-    def varimax(self, Phi, gamma = 1.0, q = 20, tol = 1e-6):
-        from numpy import eye, asarray, dot, sum, diag
-        from numpy.linalg import svd
-        p,k = Phi.shape
-        R = eye(k)
-        d=0.0
-        for i in xrange(q):
-            d_old = d
-            Lambda = dot(Phi, R)
-            u,s,vh = svd(dot(Phi.T,asarray(Lambda)**3 - (gamma/p) * dot(Lambda, diag(diag(dot(Lambda.T,Lambda))))))
-            R = dot(u,vh)
-            d = sum(s)
-            if d/d_old < tol: break
-        return dot(Phi, R)
