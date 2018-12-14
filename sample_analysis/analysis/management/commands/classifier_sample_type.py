@@ -27,17 +27,11 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
 
         # Required argument for the type of analysis to run
-        #parser.add_argument('sample_type', nargs=1, type=str)
         parser.add_argument('window_length', nargs=1, type=int)
         parser.add_argument('window_start', nargs=1, type=int)
 
     # Executes on command runtime
     def handle(self, *args, **options):
-        
-        #choices = [x[0] for x in Sample.SAMPLE_TYPE_CHOICES]
-        #if options['sample_type'][0] not in choices:
-        #    print "Sample type must by one of %s" % choices
-        #    sys.exit(1)
 
         dimensions = [
             'bark_1_mean','bark_2_mean','bark_3_mean','bark_4_mean','bark_5_mean','bark_6_mean','bark_7_mean',
@@ -107,7 +101,6 @@ class Command(BaseCommand):
             window_length=options['window_length'][0],
             window_start=options['window_start'][0],
             sample__exclude=False,
-            #sample__sample_type=options['sample_type'][0],
         )
 
         data = []
