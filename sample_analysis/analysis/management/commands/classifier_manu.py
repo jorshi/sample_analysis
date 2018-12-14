@@ -110,7 +110,7 @@ class Command(BaseCommand):
             window_length=options['window_length'][0],
             window_start=options['window_start'][0],
             sample__sample_type=options['sample_type'][0],
-            sample__kit__sample_pack__manufacturer__in=[1,2],
+            sample__kit__sample_pack__manufacturer__in=[1,2,3,4,5,6],
         )
 
         data = []
@@ -124,35 +124,41 @@ class Command(BaseCommand):
             data.append([getattr(item, d) for d in dimensions])
 
         (unique, counts) = np.unique(target, return_counts=True)
-        print unique, counts
-        print sum(counts)
+
+        print "\nClass ids: %s" % unique
+        print "Items per class: %s" % counts
+        print "Total items being classified: %s" % sum(counts)
         
         # Scale everything
         dataScaled = np.array(data)
         minMaxScaler = preprocessing.MinMaxScaler()
         dataScaled = minMaxScaler.fit_transform(dataScaled)
-        
 
-        print "Baseline"
+        print "\nBaseline"
         dummyClass = DummyClassifier()
         pred = cross_val_predict(dummyClass, dataScaled, target, cv=10)
         print accuracy_score(target, pred)
         print confusion_matrix(target, pred)
 
-        print "Running SVC Classifier"
+        print "\nRunning SVC Classifier"
         svc = SVC()
         pred = cross_val_predict(svc, dataScaled, target, cv=10)
+        average = accuracy_score(target, pred)
         print accuracy_score(target, pred)
         print confusion_matrix(target, pred)
 
-        print "Running Perceptron Classifier"
+        print "\nRunning Perceptron Classifier"
         perceptron = Perceptron()
         pred = cross_val_predict(perceptron, dataScaled, target, cv=10)
+        average = average + accuracy_score(target, pred)
         print accuracy_score(target, pred)
         print confusion_matrix(target, pred)
 
-        print "Running Random Forest Classifier"
+        print "\nRunning Random Forest Classifier"
         randomForest = RandomForestClassifier()
         pred = cross_val_predict(randomForest, dataScaled, target, cv=10)
+        average = average + accuracy_score(target, pred)
         print accuracy_score(target, pred)
         print confusion_matrix(target, pred)
+
+        print "\nAverage Classification Score: %s" % (average / 3.0)
