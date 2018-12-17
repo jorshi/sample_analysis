@@ -101,6 +101,24 @@ class PCAStat(models.Model):
         unique_together = (('sample_type', 'window_length', 'window_start'),)
 
 
+class Classification(models.Model):
+    
+    info = models.CharField(max_length=200)
+
+    sample_type = models.CharField(max_length=2, blank=True, null=True)
+    window_length = models.IntegerField(blank=True, null=True)
+    window_start = models.IntegerField(blank=True, null=True)
+
+    baseline = models.FloatField(blank=True, null=True)
+    svc = models.FloatField(blank=True, null=True)
+    perceptron = models.FloatField(blank=True, null=True)
+    random_forest = models.FloatField(blank=True, null=True)
+    average = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        unique_together = (('info', 'sample_type', 'window_length', 'window_start'),)
+
+
 class Manifold(models.Model):
 
     TSNE = "tsne"

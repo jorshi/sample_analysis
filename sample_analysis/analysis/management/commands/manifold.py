@@ -19,7 +19,7 @@ from analysis.models import Sample, AnalysisFull, Manifold
 
 
 class Command(BaseCommand):
-    help = 'Principal Component Analysis'
+    help = 'Manifold Dimension Reduction'
 
     # Override of the add_argument method
     def add_arguments(self, parser):

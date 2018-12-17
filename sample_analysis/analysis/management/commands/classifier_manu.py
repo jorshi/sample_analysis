@@ -20,11 +20,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.dummy import DummyClassifier
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, Variance
-from analysis.models import Sample, AnalysisPCA, AnalysisFull
+from analysis.models import Sample, AnalysisPCA, AnalysisFull, Classification
 
 
 class Command(BaseCommand):
-    help = 'Sample Type Classification'
+    help = 'Manufacturer Classification'
 
     # Override of the add_argument method
     def add_arguments(self, parser):
@@ -37,10 +37,10 @@ class Command(BaseCommand):
     # Executes on command runtime
     def handle(self, *args, **options):
         
-        #choices = [x[0] for x in Sample.SAMPLE_TYPE_CHOICES]
-        #if options['sample_type'][0] not in choices:
-        #    print "Sample type must by one of %s" % choices
-        #    sys.exit(1)
+        choices = [x[0] for x in Sample.SAMPLE_TYPE_CHOICES]
+        if options['sample_type'][0] not in choices:
+            print "Sample type must by one of %s" % choices
+            sys.exit(1)
 
         dimensions = [
             'bark_1_mean','bark_2_mean','bark_3_mean','bark_4_mean','bark_5_mean','bark_6_mean','bark_7_mean',
@@ -113,6 +113,23 @@ class Command(BaseCommand):
             sample__kit__sample_pack__manufacturer__in=[1,2,3,4,5,6],
         )
 
+        classificationId = "Manufacturer"
+
+        try:
+            newClassification = Classification.objects.get(
+                info=classificationId,
+                window_length=options['window_length'][0],
+                window_start=options['window_start'][0],
+                sample_type=options['sample_type'][0],
+            )
+        except Classification.DoesNotExist:
+            newClassification = Classification(
+                info=classificationId,
+                window_length=options['window_length'][0],
+                window_start=options['window_start'][0],
+                sample_type=options['sample_type'][0],
+            )
+
         data = []
         target = []
 
@@ -137,28 +154,35 @@ class Command(BaseCommand):
         print "\nBaseline"
         dummyClass = DummyClassifier()
         pred = cross_val_predict(dummyClass, dataScaled, target, cv=10)
-        print accuracy_score(target, pred)
+        newClassification.baseline = accuracy_score(target, pred)
+        print newClassification.baseline
         print confusion_matrix(target, pred)
 
         print "\nRunning SVC Classifier"
         svc = SVC()
         pred = cross_val_predict(svc, dataScaled, target, cv=10)
-        average = accuracy_score(target, pred)
-        print accuracy_score(target, pred)
+        newClassification.svc = accuracy_score(target, pred)
+        average = newClassification.svc
+        print newClassification.svc
         print confusion_matrix(target, pred)
 
         print "\nRunning Perceptron Classifier"
         perceptron = Perceptron()
         pred = cross_val_predict(perceptron, dataScaled, target, cv=10)
-        average = average + accuracy_score(target, pred)
-        print accuracy_score(target, pred)
+        newClassification.perceptron = accuracy_score(target, pred)
+        average = average + newClassification.perceptron
+        print newClassification.perceptron
         print confusion_matrix(target, pred)
 
         print "\nRunning Random Forest Classifier"
         randomForest = RandomForestClassifier()
         pred = cross_val_predict(randomForest, dataScaled, target, cv=10)
-        average = average + accuracy_score(target, pred)
-        print accuracy_score(target, pred)
+        newClassification.random_forest = accuracy_score(target, pred)
+        average = average + newClassification.random_forest
+        print newClassification.random_forest
         print confusion_matrix(target, pred)
 
-        print "\nAverage Classification Score: %s" % (average / 3.0)
+        newClassification.average = average / 3.0
+        print "\nAverage Classification Score: %s" % newClassification.average
+
+        newClassification.save()
