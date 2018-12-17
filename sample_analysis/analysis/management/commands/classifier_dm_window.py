@@ -20,7 +20,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.dummy import DummyClassifier
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, Variance
-from analysis.models import Sample, AnalysisPCA, AnalysisFull
+from analysis.models import Sample, AnalysisPCA, AnalysisFull, Classification
 
 
 class Command(BaseCommand):
@@ -143,10 +143,24 @@ class Command(BaseCommand):
             else:
                 count[(variance[arg]['window_length'], variance[arg]['window_start'])] = 1
 
-
-
-
             maxVarWindows[feature] = (variance[arg]['window_length'], variance[arg]['window_start'])
+
+        classificationId = "Drum Machine - MaxVar"
+
+        try:
+            newClassification = Classification.objects.get(
+                info=classificationId,
+                window_length=options['window_length'][0],
+                window_start=options['window_start'][0],
+                sample_type=options['sample_type'][0],
+            )
+        except Classification.DoesNotExist:
+            newClassification = Classification(
+                info=classificationId,
+                window_length=options['window_length'][0],
+                window_start=options['window_start'][0],
+                sample_type=options['sample_type'][0],
+            )
 
         data = []
         target = []
@@ -178,29 +192,35 @@ class Command(BaseCommand):
         print "\nBaseline"
         dummyClass = DummyClassifier()
         pred = cross_val_predict(dummyClass, dataScaled, target, cv=10)
-        print accuracy_score(target, pred)
+        newClassification.baseline = accuracy_score(target, pred)
+        print newClassification.baseline
         print confusion_matrix(target, pred)
 
         print "\nRunning SVC Classifier"
         svc = SVC()
         pred = cross_val_predict(svc, dataScaled, target, cv=10)
-        average = accuracy_score(target, pred)
-        print accuracy_score(target, pred)
+        newClassification.svc = accuracy_score(target, pred)
+        average = newClassification.svc
+        print newClassification.svc
         print confusion_matrix(target, pred)
 
         print "\nRunning Perceptron Classifier"
         perceptron = Perceptron()
         pred = cross_val_predict(perceptron, dataScaled, target, cv=10)
-        average = average + accuracy_score(target, pred)
-        print accuracy_score(target, pred)
+        newClassification.perceptron = accuracy_score(target, pred)
+        average = average + newClassification.perceptron
+        print newClassification.perceptron
         print confusion_matrix(target, pred)
 
         print "\nRunning Random Forest Classifier"
         randomForest = RandomForestClassifier()
         pred = cross_val_predict(randomForest, dataScaled, target, cv=10)
-        average = average + accuracy_score(target, pred)
-        print accuracy_score(target, pred)
+        newClassification.random_forest = accuracy_score(target, pred)
+        average = average + newClassification.random_forest
+        print newClassification.random_forest
         print confusion_matrix(target, pred)
 
-        print "\nAverage Classification Score: %s" % (average / 3.0)
+        newClassification.average = average / 3.0
+        print "\nAverage Classification Score: %s" % newClassification.average
 
+        newClassification.save()
