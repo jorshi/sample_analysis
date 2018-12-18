@@ -97,7 +97,7 @@ class Command(BaseCommand):
             x = [j.dim_1 for j in samples.filter(sample__kit__sample_pack=machine)]
             y = [j.dim_2 for j in samples.filter(sample__kit__sample_pack=machine)]
 
-            ax.scatter(x, y, c=Colours[i], label=pack[0].name, s=20)
+            ax.scatter(x, y, c=Colours[i], label=pack[0].name, s=30, alpha=0.75)
             i = i + 1
 
         ax.grid(True)
