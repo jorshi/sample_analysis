@@ -51,11 +51,11 @@ that have been loaded, data from audio feature extraction, dimensions after mani
 In order to create tables in the database for each model, a Django command must be run:
 `python manage.py migrate`
 
-If you make any changes to models.py the database tables will need to be updated to reflect those changes. Run:
-`python manage.py makemigrations` - Django will automatically detect changes to models.py and create the SQL commands
-to update the database
-Then:
-`python manage.py migrate` to run those SQL commands
+If you make any changes to models.py the database tables will need to be updated to reflect those changes. <br />
+`python manage.py makemigrations` <br />
+Django will automatically detect changes to models.py and create the SQL commands to update the database <br />
+Then: `python manage.py migrate` <br />
+to run those SQL commands
 
 Project should now be ready to start loading in samples!
 
@@ -65,7 +65,7 @@ Project should now be ready to start loading in samples!
   options:
     --tags any tag words to associate with this directory of samples, multiple tags are comma separated
 
-!SAMPLES MUST BE ORGANIZED CORRECTLY!
+SAMPLES MUST BE ORGANIZED CORRECTLY
 A particular folder structure is assumed so that samples are correctly organized by Sample Pack (Drum Machine), Kit, and Sample Type (kick or snare)
 
 This structure is as follows:
@@ -90,17 +90,25 @@ in the database as a window length and window start of 0 and 0.
 Alternatively, there is a shell script can be executed that will run a full analysis on a selection
 of window lengths and start times that were used for this research.
 
-### Statistical Analysis
+`./scripts/full_analysis.sh`
 
-Check for outlier samples are mark them as outliers to be removed from any further analysis
-`python ./sample_analysis/manage.py remove_outliers sample_type`
+Results of audio feature extraction are stored in the data model AnalysisFull
 
-Run primrary component analysis<br />
-`python ./sample_analysis/manage.py pca sample_type`
+### Principal Component Analysis
 
-Variance, variance ratios, and component weightings for pca will be printed to stdout. The points of each sample in corresponding to the new dimensions is saved to the analysis_analysispca mysql table.
+Principal Component Analysis (PCA) is used here as an analysis tool to evaluate the effects of windowing audio samples prior to audio feature extraction.
 
-sample_type is either 'ki' or 'sn'
+To run PCA on a set of samples:
+`python manage.py pca_full sample_type window_length window_start`
+
+Where `sample_type` is either 'ki' or 'sn', `window_length` is the window length in ms, and `window_start` is the starting time of the window in percentage of the attack. The combination of `window_length` and `window_start` must have already been extracted during feature analysis in the previous step.
+
+Tests for sample adequecy and the null hypothesis are performed and the outputs for these are printed to stdout. Tests performed are Bartlett's Test of Sphericity, Levene's Test, and Kaiser-Meyer-Olkin.
+
+Explained variance ratio, explained variance, and top components are printed to stdout. The first four dimensions resulting from PCA for each sample are saved as a AnalysisPCA object in the database and the explained variance ratio is saved as a PCAStat object in the database. Each PCAStat data object has a unique sample type, window length and window start. 
+
+There are two shell scripts that will run PCA on all window length and start variations used in the research. They can be executed using:
+`./scripts/full_pca_kick.sh && ./scripts/full_pca_snare.sh`
 
 ### Exporting Data
 
