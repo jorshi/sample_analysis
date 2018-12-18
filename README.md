@@ -146,10 +146,10 @@ Sample type classification attempts to classify kicks and snare samples.
 #### Drum Machine Classification
 `python manage.py classifier_dm sample_type window_length window_start`
 
-or to use the maximum variance windowing scheme as described above: 
+or to use the maximum variance windowing scheme as described above: <br />
 `python manage.py classifier_dm_window sample_type window_length window_start`
 
-To run drum machine classification on the samples after dimension reduction:
+To run drum machine classification on the samples after dimension reduction: <br />
 `python manage.py classifier_dm_reduced reduction_method sample_type window_length window_start`
 
 Where reduction method is one of the manifold methods or pca
@@ -175,7 +175,7 @@ Then run the raw SQL command, such as the one outlined above for retrieving Samp
 #### Manufacturer Classification
 `python manage.py classifier_manu sample_type window_length window_start`
 
-or to use the maximum variance windowing scheme as described above: 
+or to use the maximum variance windowing scheme as described above: <br />
 `python manage.py classifier_manu_window sample_type window_length window_start`
 
 Manufacturer classification attempts to classify either kick or snares by manufacturer. THE MANUFACTURERS ARE HARD CODED INTO THE CLASSIFICATION COMMAND SCRIPTS. Manufacturers need to be added manually to the database and to each SamplePack model. The easiest way to do this is through raw mysql commands. Then, the manufacturer ids need to be updated in the manufacturer classification scripts:
@@ -183,13 +183,11 @@ Manufacturer classification attempts to classify either kick or snares by manufa
 https://github.com/jorshi/sample_analysis/blob/master/sample_analysis/analysis/management/commands/classifier_manu.py
 https://github.com/jorshi/sample_analysis/blob/master/sample_analysis/analysis/management/commands/classifier_manu_window.py
 
+### Plotting
+`python manage.py plot_samples reduction_method sample_type window_length window_start`
+
+This will use matplotlib to plot the samples used in the drum machine classification task.
 
 ## Exporting Data
 
 There are a number of scripts in `./sample_analysis/db_utils/export_commands` for exporting DB contents to a .csv file. They are currently hard-coded with the output file, so that will need to be editted for a new user.
-
-
-
-
-
-
