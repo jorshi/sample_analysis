@@ -65,7 +65,7 @@ Project should now be ready to start loading in samples!
   options:
     --tags any tag words to associate with this directory of samples, multiple tags are comma separated
 
-SAMPLES MUST BE ORGANIZED CORRECTLY
+SAMPLES MUST BE ORGANIZED CORRECTLY <br />
 A particular folder structure is assumed so that samples are correctly organized by Sample Pack (Drum Machine), Kit, and Sample Type (kick or snare)
 
 This structure is as follows:
@@ -87,6 +87,8 @@ portion of the audio signal. If both window length and window start are left out
 sample length will be used starting from the beginning of the sample. This will be stored
 in the database as a window length and window start of 0 and 0.
 
+Audio feature extraction is performed using Essentia and 133 features are extracted for each audio sample.
+
 Alternatively, there is a shell script can be executed that will run a full analysis on a selection
 of window lengths and start times that were used for this research.
 
@@ -98,8 +100,8 @@ Results of audio feature extraction are stored in the data model AnalysisFull
 
 Principal Component Analysis (PCA) is used here as an analysis tool to evaluate the effects of windowing audio samples prior to audio feature extraction.
 
-To run PCA on a set of samples:
-`python manage.py pca_full sample_type window_length window_start`
+To run PCA on a set of samples: <br/>
+`python manage.py pca_full sample_type window_length window_start`<br/><br/>
 
 Where `sample_type` is either 'ki' or 'sn', `window_length` is the window length in ms, and `window_start` is the starting time of the window in percentage of the attack. The combination of `window_length` and `window_start` must have already been extracted during feature analysis in the previous step.
 
@@ -110,7 +112,29 @@ Explained variance ratio, explained variance, and top components are printed to 
 There are two shell scripts that will run PCA on all window length and start variations used in the research. They can be executed using:
 `./scripts/full_pca_kick.sh && ./scripts/full_pca_snare.sh`
 
-### Exporting Data
+#### PCA - Maximum Variance Windowing Scheme
+In addition to the regular command `pca_full` which allows you to specifiy the sample type and window length and start combination, another command was created to test an alternative windowing scheme. This command is: <br />
+`python manage.py full_pca_window sample_type window_length window_start` <br /><br />
+This command uses a windowing scheme that we call Maximum Variance Windowing. In this scheme, multiple combinations of window_length and window_start are used in order to maximize the variance for each dimension across all samples of a particular type. For example, for snare drums, the variance of the spectral centroid feature might be maximized when using a window length of 250ms and a window start of 50%, and the variance of the first MFCC band feature might be maximized when using a window length of 100ms and a window start of 20%. In Maximum Variance Windowing, all 133 feature dimensions have a window length and start combination selected so that the variance is maximized for that feature. AnalysisPCA objects generated from this command will be stored with a window_start and and window_length of -1. 
+
+*Note that arguments for `window_length` and `window_start` are still required. This is just used to extract the correct number of samples from the database. Use any combination of length and start that was used when running feature analysis.
+
+### Manifold Learning
+Manifold learning is used here for dimension reduction to 2 dimensions for visual plotting. The command to perform manifold learning is: <br />
+`python manage.py manifold manifold_method sample_type window_length window_start`<br /><br />
+Where `manifold_method` is one of `tsne`, `tsne_pca`, `isomap`, `locally_linear`, `mds`, or `spectral`
+For more information on each of these manifold learning methods see: https://scikit-learn.org/stable/modules/classes.html#module-sklearn.manifold
+
+To use the maximum variance windowing scheme method described above, use the command:<br/>
+`python manage.py manifold manifold_method sample_type window_length window_start`<br /><br />
+Similar to above, the `window_length` and `window_start` parameters when using this method are simply required to extract the correct number of samples from the database, the window length and start time will be selected automatically to maximize variance for each dimension.
+
+Results of manifold learning dimension reduction are stored as a Manifold object in the database.
+
+To run all manifold methods on all combinations of window start and length used in this research use the shell scripts:<br />
+`./scripts/manifold_ki.sh && ./scripts/manifold_sn.sh` <br/>
+
+## Exporting Data
 
 There are a number of scripts in `./sample_analysis/db_utils/export_commands` for exporting DB contents to a .csv file. They are currently hard-coded with the output file, so that will need to be editted for a new user.
 
