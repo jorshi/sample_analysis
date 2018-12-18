@@ -122,6 +122,7 @@ class Classification(models.Model):
 class Manifold(models.Model):
 
     TSNE = "tsne"
+    TSNEPCA = "tsne_pca"
     ISOMAP = "isomap"
     LOCALLYLINEAR = "locally_linear"
     MDS = "mds"
@@ -129,6 +130,7 @@ class Manifold(models.Model):
     
     MANIFOLD_METHODS = (
         (TSNE, 'TSNE'),
+        (TSNEPCA, 'TSNE PCA Init'),
         (ISOMAP, 'Isomap'),
         (LOCALLYLINEAR, 'Locally Linear'),
         (MDS, 'MDS'),
