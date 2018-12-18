@@ -145,20 +145,20 @@ class Command(BaseCommand):
 
             maxVarWindows[feature] = (variance[arg]['window_length'], variance[arg]['window_start'])
 
-        classificationId = "Drum Machine - MaxVar"
+        classificationId = "Drum Machine"
 
         try:
             newClassification = Classification.objects.get(
                 info=classificationId,
-                window_length=options['window_length'][0],
-                window_start=options['window_start'][0],
+                window_length=-1,
+                window_start=-1,
                 sample_type=options['sample_type'][0],
             )
         except Classification.DoesNotExist:
             newClassification = Classification(
                 info=classificationId,
-                window_length=options['window_length'][0],
-                window_start=options['window_start'][0],
+                window_length=-1,
+                window_start=-1,
                 sample_type=options['sample_type'][0],
             )
 

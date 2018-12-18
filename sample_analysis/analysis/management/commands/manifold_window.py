@@ -1,38 +1,48 @@
 """
-Sample type classification using maximum variance method
-for choosing window size and length.  
+Manifold Dimension Reduction
+
 
 usage:
-    python ./manage.py classifier_type_window [window_length]
+    python ./manage.py manifold [manifold_method] 
 """
 
 import sys
 import numpy as np
+import math
+import pandas as pd
 from sklearn import preprocessing
-from sklearn.metrics import confusion_matrix, accuracy_score 
-from sklearn.model_selection import cross_val_predict
 from sklearn.decomposition import PCA
-from sklearn.svm import SVC
-from sklearn.linear_model import Perceptron
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.dummy import DummyClassifier
+import sklearn.manifold as manifold
+import scipy.stats as stats
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, Variance
-from analysis.models import Sample, AnalysisPCA, AnalysisFull, Classification
+from analysis.models import Sample, AnalysisFull, Manifold
 
 
 class Command(BaseCommand):
-    help = 'Sample Type Classification'
+    help = 'Manifold Dimension Reduction'
 
     # Override of the add_argument method
     def add_arguments(self, parser):
 
         # Required argument for the type of analysis to run
+        parser.add_argument('manifold_method', nargs=1, type=str)
+        parser.add_argument('sample_type', nargs=1, type=str)
         parser.add_argument('window_length', nargs=1, type=int)
         parser.add_argument('window_start', nargs=1, type=int)
 
     # Executes on command runtime
     def handle(self, *args, **options):
+
+        choices = [x[0] for x in Sample.SAMPLE_TYPE_CHOICES]
+        if options['sample_type'][0] not in choices:
+            print "Sample type must be one of %s" % choices
+            sys.exit(1)
+
+        methods = [x[0] for x in Manifold.MANIFOLD_METHODS]
+        if options['manifold_method'][0] not in methods:
+            print "Manifold method must be one of %s" % methods
+            sys.exit(1)
 
         dimensions = [
             'bark_1_mean','bark_2_mean','bark_3_mean','bark_4_mean','bark_5_mean','bark_6_mean','bark_7_mean',
@@ -99,93 +109,78 @@ class Command(BaseCommand):
 
         # Get all the analysis objects for a particular sample type
         analysisObjects = AnalysisFull.objects.filter(
-            window_start=options['window_start'][0],
             window_length=options['window_length'][0],
+            sample__sample_type=options['sample_type'][0],
+            window_start=options['window_start'][0],
             sample__exclude=False,
+            #outlier=False
         )
+        matrix = []
+        sampleOrder = []
 
-        analysisVar = AnalysisFull.objects.all()
+        analysisVar = AnalysisFull.objects.filter(sample__sample_type=options['sample_type'][0])
+
         maxVarWindows = {}
         for feature in dimensions:
             variance = analysisVar.values('window_length', 'window_start').annotate(Variance(feature))
             arg = np.argmax([item[feature + '__variance'] for item in variance])
             maxVarWindows[feature] = (variance[arg]['window_length'], variance[arg]['window_start'])
 
-
-        classificationId = "Sample Type"
-
-        try:
-            newClassification = Classification.objects.get(
-                info=classificationId,
-                window_length=-1,
-                window_start=-1,
-            )
-        except Classification.DoesNotExist:
-            newClassification = Classification(
-                info=classificationId,
-                window_length=-1,
-                window_start=-1,
-            )
-
-        data = []
-        target = []
-
         # Create a numpy matrix of the analyis objects. Also, keep track of the sample order
         # as they are retrieved from the database by storing references to the sample in the
         # sampleOrder list
         for item in analysisObjects:
-            target.append(0 if item.sample.sample_type == 'ki' else 1)
+            sampleOrder.append(item.sample)
             sampleObjs = [obj for obj in analysisVar.filter(sample_id=item.sample_id)]
-            windowMap = {(a.window_length, a.window_start):a for a in sampleObjs} 
+            windowMap = {(a.window_length,a.window_start):a for a in sampleObjs} 
             features = []
             for feature in dimensions:
                 aObj = windowMap[maxVarWindows[feature]]
                 features.append(getattr(aObj, feature))
-            data.append(features)
+            matrix.append(features)
 
-        (unique, counts) = np.unique(target, return_counts=True)
+        nMatrix = np.array(matrix)
 
-        print "\nClass ids: %s" % unique
-        print "Items per class: %s" % counts
-        print "Total items being classified: %s" % sum(counts)
-        
         # Scale everything
-        dataScaled = np.array(data)
-        minMaxScaler = preprocessing.MinMaxScaler()
-        dataScaled = minMaxScaler.fit_transform(dataScaled)
+        nMatrix = preprocessing.scale(nMatrix)
+        
+        manifoldMethod = {
+            "tsne": manifold.TSNE(n_components=2),
+            "tsne_pca": manifold.TSNE(n_components=2, init='pca'),
+            "isomap": manifold.Isomap(n_components=2),
+            "locally_linear": manifold.LocallyLinearEmbedding(n_components=2),
+            "mds": manifold.MDS(n_components=2),
+            "spectral": manifold.SpectralEmbedding(n_components=2),
+        }
 
-        print "\nBaseline"
-        dummyClass = DummyClassifier()
-        pred = cross_val_predict(dummyClass, dataScaled, target, cv=10)
-        newClassification.baseline = accuracy_score(target, pred)
-        print newClassification.baseline
-        print confusion_matrix(target, pred)
+        self.stdout.write("Performing %s dimension reduction on %d samples" % (
+            options['manifold_method'][0],
+            len(sampleOrder)
+        ))
+        
+        # Perform Dimension Reduction
+        method = manifoldMethod[options['manifold_method'][0]]
+        y = method.fit_transform(nMatrix)
 
-        print "\nRunning SVC Classifier"
-        svc = SVC()
-        pred = cross_val_predict(svc, dataScaled, target, cv=10)
-        newClassification.svc = accuracy_score(target, pred)
-        average = newClassification.svc
-        print newClassification.svc
-        print confusion_matrix(target, pred)
+        self.stdout.write("Saving reduced dimensions to database")
 
-        print "\nRunning Perceptron Classifier"
-        perceptron = Perceptron()
-        pred = cross_val_predict(perceptron, dataScaled, target, cv=10)
-        newClassification.perceptron = accuracy_score(target, pred)
-        average = average + newClassification.perceptron
-        print newClassification.perceptron
-        print confusion_matrix(target, pred)
+        # Save the calculated TSNE dimensions as new objects related to corresponding sample
+        for i in range(len(y)):
+            try:
+                newManifold = Manifold.objects.get(
+                    method=options['manifold_method'][0],
+                    sample=sampleOrder[i],
+                    window_length=-1,
+                    window_start=-1
+                )
+            except Manifold.DoesNotExist:
+                newManifold = Manifold(
+                    method=options['manifold_method'][0],
+                    sample = sampleOrder[i],
+                    window_length = -1,
+                    window_start = -1
+                )
+            for j in range(len(y[i])):
+                setattr(newManifold, "dim_%s" % (j + 1), y[i][j])
 
-        print "\nRunning Random Forest Classifier"
-        randomForest = RandomForestClassifier()
-        pred = cross_val_predict(randomForest, dataScaled, target, cv=10)
-        newClassification.random_forest = accuracy_score(target, pred)
-        average = average + newClassification.random_forest
-        print newClassification.random_forest
-        print confusion_matrix(target, pred)
-
-        newClassification.average = average / 3.0
-        print "\nAverage Classification Score: %s" % newClassification.average
-
-        newClassification.save()
+            newManifold.save()

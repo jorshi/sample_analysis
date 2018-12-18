@@ -130,11 +130,12 @@ class Command(BaseCommand):
         nMatrix = preprocessing.scale(nMatrix)
         
         manifoldMethod = {
-            "tsne": manifold.TSNE,
-            "isomap": manifold.Isomap,
-            "locally_linear": manifold.LocallyLinearEmbedding,
-            "mds": manifold.MDS,
-            "spectral": manifold.SpectralEmbedding,
+            "tsne": manifold.TSNE(n_components=2),
+            "tsne_pca": manifold.TSNE(n_components=2, init='pca'),
+            "isomap": manifold.Isomap(n_components=2),
+            "locally_linear": manifold.LocallyLinearEmbedding(n_components=2),
+            "mds": manifold.MDS(n_components=2),
+            "spectral": manifold.SpectralEmbedding(n_components=2),
         }
 
         self.stdout.write("Performing %s dimension reduction on %d samples" % (
@@ -143,7 +144,7 @@ class Command(BaseCommand):
         ))
         
         # Perform Dimension Reduction
-        method = manifoldMethod[options['manifold_method'][0]](n_components=2)
+        method = manifoldMethod[options['manifold_method'][0]]
         y = method.fit_transform(nMatrix)
 
         self.stdout.write("Saving reduced dimensions to database")
