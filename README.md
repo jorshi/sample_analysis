@@ -134,6 +134,56 @@ Results of manifold learning dimension reduction are stored as a Manifold object
 To run all manifold methods on all combinations of window start and length used in this research use the shell scripts:<br />
 `./scripts/manifold_ki.sh && ./scripts/manifold_sn.sh` <br/>
 
+### Classification
+Classification is used to evaluate the windowing methods as well as to evaluate the effects of the various dimension reduction techniques. Classification is performed using SVC, Perceptron, and Random Forest methods. For each classification task, the baseline score is printed, along with the score achieved by each individual method, and then an average of the three methods. Each of these scores is saved to the database as a Classification object.
+#### Sample Type Classification
+`python manage.py classifier_sample_type window_length window_start`
+
+or to use the maximum variance windowing scheme as described above: 
+`python manage.py classifier_type_window window_length window_start`
+
+Sample type classification attempts to classify kicks and snare samples.
+#### Drum Machine Classification
+`python manage.py classifier_dm sample_type window_length window_start`
+
+or to use the maximum variance windowing scheme as described above: 
+`python manage.py classifier_dm_window sample_type window_length window_start`
+
+To run drum machine classification on the samples after dimension reduction:
+`python manage.py classifier_dm_reduced reduction_method sample_type window_length window_start`
+
+Where reduction method is one of the manifold methods or pca
+
+Drum machine classification attempts to classify either kicks or snares by drum machine. THE DRUM MACHINES USED ARE HARD CODED INTO THE CLASSIFICATION COMMAND SCRIPTS. The ids for each drum machine will need to be updated by you depending on which drum machines you want to include in your classification. Here, the drum machine id is the SamplePack model id.
+
+In the research, we used drum machines that had 50 or more samples. You can use this MySQL command to find the SamplePack ids for SamplePacks that have more than 50 kick samples: <br />
+`select p.id, p.name, count(*) from analysis_sample s join analysis_kit k on s.kit_id=k.id join analysis_samplepack p on k.sample_pack_id=p.id where s.sample_type='ki' group by p.id having count(*) > 50;`<br/>
+Replace `s.sample_type='ki'` with `s.sample_type='sn'` to get SamplePacks with more than 50 snare drums
+
+The resulting SamplePack ids need to be updated in the drum machine classification scripts:
+https://github.com/jorshi/sample_analysis/blob/master/sample_analysis/analysis/management/commands/classifier_dm.py
+https://github.com/jorshi/sample_analysis/blob/master/sample_analysis/analysis/management/commands/classifier_dm_window.py
+https://github.com/jorshi/sample_analysis/blob/master/sample_analysis/analysis/management/commands/classifier_dm_reduced.py
+
+##### Running MySQL Commands
+In order to run raw SQL commands you need to enter into the mysql interface:<br />
+`mysql` or `mysql -uroot`<br />
+Then select the sample_analysis database:<br />
+`use sample_analysis;`<br />
+Then run the raw SQL command, such as the one outlined above for retrieving SamplePack ids.
+
+#### Manufacturer Classification
+`python manage.py classifier_manu sample_type window_length window_start`
+
+or to use the maximum variance windowing scheme as described above: 
+`python manage.py classifier_manu_window sample_type window_length window_start`
+
+Manufacturer classification attempts to classify either kick or snares by manufacturer. THE MANUFACTURERS ARE HARD CODED INTO THE CLASSIFICATION COMMAND SCRIPTS. Manufacturers need to be added manually to the database and to each SamplePack model. The easiest way to do this is through raw mysql commands. Then, the manufacturer ids need to be updated in the manufacturer classification scripts:
+
+https://github.com/jorshi/sample_analysis/blob/master/sample_analysis/analysis/management/commands/classifier_manu.py
+https://github.com/jorshi/sample_analysis/blob/master/sample_analysis/analysis/management/commands/classifier_manu_window.py
+
+
 ## Exporting Data
 
 There are a number of scripts in `./sample_analysis/db_utils/export_commands` for exporting DB contents to a .csv file. They are currently hard-coded with the output file, so that will need to be editted for a new user.
