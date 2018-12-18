@@ -6,7 +6,7 @@ but for now it works well to get all the analysisObject into the DB
 and maintain the relation to the samples
 
 Usage:
-    python ./manage.py runanalysis analysis_type
+    python ./manage.py run_analysis_full [window_length] [window_start]
 """
 
 

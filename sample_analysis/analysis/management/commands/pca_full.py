@@ -130,16 +130,21 @@ class Command(BaseCommand):
         #print "Removing %s" % np.array(dimensions)[np.where(vKMO <= 0.6)[0]]
 
         g2KMO, v2KMO = self.globalKMO(nMatrix)
+
+        print "\nLevene's Test:"
         print stats.levene(*nMatrix)
 
+        print "\nGlobal KMO:"
         print g2KMO
 
+        print "\nPerforming PCA on %s samples" % len(sampleOrder)
         # Perform PCA
         pca = PCA(n_components=4)
         pca.fit(nMatrix)
         y = pca.transform(nMatrix)
 
         # Save the calculated PCA dimensions as new objects related to corresponding sample
+        print "Saving reduced dimensions"
         for i in range(len(y)):
             try:
                 newPca = AnalysisPCA.objects.get(
@@ -157,10 +162,11 @@ class Command(BaseCommand):
                 setattr(newPca, "dim_%s" % (j + 1), y[i][j])
             newPca.save()
 
-        print "Explained Variance Ratio"
+        print "\nExplained Variance Ratio for first 4 dimensions:"
         print pca.explained_variance_ratio_
-        print sum(pca.explained_variance_ratio_[0:2])*100
+        print "Variance ratio for first two dimensions summed: %s" % (sum(pca.explained_variance_ratio_[0:2]))
 
+        print "Saving Explained Variance Ratio"
         try:
             newPcaStat = PCAStat.objects.get(
                 sample_type=options['sample_type'][0],
@@ -182,7 +188,7 @@ class Command(BaseCommand):
         print "\nExplained Variance"
         print pca.explained_variance_
 
-        print "\nComponent Weightings"
+        #print "\nComponent Weightings"
         #print pca.components_
         #np.savetxt('output.csv', pca.components_, delimiter=",")
         #print self.varimax(pca.components_)
@@ -211,6 +217,8 @@ class Command(BaseCommand):
     """
     def bartlett(self, matrix):
 
+        print "\nPerforming Barlett's Test of Sphericity"
+
         d = pd.DataFrame(matrix)
         dCorr = d.corr()
 
@@ -219,11 +227,11 @@ class Command(BaseCommand):
         chi2 = -(n - 1 - ((2*p + 5) / 6)) * np.log(np.linalg.det(dCorr.values))
         ddl = p*(p-1)/2
     
-        print chi2
-        print ddl
+        print "Approximate chi-square: %s" % chi2
+        print "Degrees of freddom: %s" % ddl
         pvalue = stats.chi2.pdf(chi2, ddl)
 
-        print pvalue
+        print "P-Value: %s" % pvalue
 
     def globalKMO(self, matrix):
 
