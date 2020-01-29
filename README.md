@@ -37,7 +37,7 @@ All commands are setup through the django command interface. They can be accesse
 `cd sample_analysis`
 `python manage.py command arguments [optional-arguments]`
 
-ALL COMMANDS LISTED BELOW, INCLUDING SHELL SCRIPTS WILL ASSUME YOU ARE IN THE sample_analysis FOLDER. ie the folder that contains manage.py
+*All commands listed, including shell scripts, should be run from sample_analysis folder*. ie the folder that contains manage.py
 
 For more information on Django commands and how to write your own: https://simpleisbetterthancomplex.com/tutorial/2018/08/27/how-to-create-custom-django-management-commands.html
 
