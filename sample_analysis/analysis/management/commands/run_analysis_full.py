@@ -28,7 +28,7 @@ class Command(BaseCommand):
 
     # Override of the add_argument method
     def add_arguments(self, parser):
-        
+
         parser.add_argument(
             '--window_length',
             dest='window_length',
@@ -63,7 +63,7 @@ class Command(BaseCommand):
         # for now including all samplepacks
         samples = Sample.objects.all().filter(
             exclude=False,
-            #kit__sample_pack__exclude=False, 
+            #kit__sample_pack__exclude=False,
         )
 
         numSamples = len(samples)
@@ -73,10 +73,10 @@ class Command(BaseCommand):
         for sample in samples:
             # Get audio and run loudness analysis
             try:
-                loader = es.MonoLoader(filename=sample.path.encode('utf-8'))
+                loader = es.MonoLoader(filename=sample.path)
                 neqAudio = loader()
 
-                eqLoader = es.EqloudLoader(filename=sample.path.encode('utf-8'))
+                eqLoader = es.EqloudLoader(filename=sample.path)
                 eqAudio = eqLoader()
 
                 # Trim the audio clip
@@ -95,14 +95,14 @@ class Command(BaseCommand):
             # Frame size & hop size
             frameSize = 2048
             hopSize = 256
-            
+
             # Amplitude envelope of sample
             envelope = es.Envelope()
             audioEnv = envelope(eqAudio)
 
             # Find attack phase and LAT
             latFunc = es.LogAttackTime()
-            lat, attackStart, attackEnd = latFunc(audioEnv) 
+            lat, attackStart, attackEnd = latFunc(audioEnv)
 
             # Temporal Centroid on entire sample length
             tc = self.temporal_centroid(eqAudio)
@@ -208,7 +208,7 @@ class Command(BaseCommand):
 
             analysisObject.hfc = np.mean(neqSpectralResults[4])
             analysisObject.hfc_dev = np.std(neqSpectralResults[4])
-            
+
             # MFCCs
             mfcc_mean = np.mean(neqSpectralResults[5], axis=0)
             analysisObject.mfcc_1_mean = mfcc_mean[0]
@@ -273,7 +273,7 @@ class Command(BaseCommand):
             analysisObject.spectral_strongpeak_dev = np.std(neqSpectralResults[24])
             analysisObject.zero_crossing_rate_dev = np.std(neqSpectralResults[25])
             analysisObject.inharmonicity_dev = np.std(neqSpectralResults[26])
-            
+
             tristimulus = np.mean(neqSpectralResults[27], axis=0)
             analysisObject.tristimulus_1 = tristimulus[0]
             analysisObject.tristimulus_2 = tristimulus[1]
@@ -286,7 +286,7 @@ class Command(BaseCommand):
 
             # Spectral extractor with equal loudness filter
             eqSpectralExtractor = es.LowLevelSpectralEqloudExtractor(frameSize=frameSize, hopSize=hopSize)
-            eqSpectralResults = eqSpectralExtractor(eqAudio)            
+            eqSpectralResults = eqSpectralExtractor(eqAudio)
 
             analysisObject.spectral_centroid = np.mean(eqSpectralResults[3])
             analysisObject.spectral_kurtosis = np.mean(eqSpectralResults[4])
@@ -299,7 +299,7 @@ class Command(BaseCommand):
             analysisObject.spectral_spread_dev = np.std(eqSpectralResults[6])
 
             analysisObject.save()
-            
+
             i = i + 1
             self.stdout.write("\t\t%2.2f%%" % (100.0*(i/float(numSamples))), ending='\r')
             self.stdout.flush()

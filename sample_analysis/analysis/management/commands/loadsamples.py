@@ -43,7 +43,7 @@ class Command(BaseCommand):
                     tagObject.save()
 
                 self.tags.append(tagObject)
-        
+
         self.stdout.write("Samples Loaded: %d " % self.samplesLoaded, ending='\r')
         self.stdout.flush()
 
@@ -51,7 +51,7 @@ class Command(BaseCommand):
             self.exploreSamplePack(directory, os.path.abspath(directory))
 
         self.stdout.write("Samples Loaded: %d" % self.samplesLoaded)
-    
+
     def exploreSamplePack(self, name, root, prev=None):
 
         # Check out all directory items
@@ -71,7 +71,7 @@ class Command(BaseCommand):
                             prev = kit
 
                     # Load samples for kick or snare
-                    sampleType = self.sampleTypes[item] 
+                    sampleType = self.sampleTypes[item]
                     for fileItem in os.listdir(fullPath):
                         if fileItem[0] == '.':
                             continue
@@ -91,9 +91,9 @@ class Command(BaseCommand):
                         except Sample.DoesNotExist:
                             sample = Sample(kit=prev, path=samplePath, sample_type=sampleType,
                                             start_time=startTime, stop_time=stopTime)
-                        
+
                         sample.save()
-                        
+
                         self.samplesLoaded = self.samplesLoaded + 1
                         self.stdout.write("Samples Loaded: %d " % self.samplesLoaded, ending='\r')
                         self.stdout.flush()
@@ -130,7 +130,7 @@ class Command(BaseCommand):
     def onsetDetection(self, samplePath):
 
         # Get audio from file
-        loader = es.MonoLoader(filename=samplePath.encode('utf-8'))
+        loader = es.MonoLoader(filename=samplePath)
         audio = loader()
 
         startStop = es.StartStopSilence()

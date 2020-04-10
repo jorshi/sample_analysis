@@ -21,7 +21,7 @@ class SamplePack(models.Model):
     tags = models.ManyToManyField(Tag, related_name='samples_packs')
     date = models.DateField(null=True, blank=True)
     info_link = models.URLField(null=True, blank=True)
-    manufacturer = models.ForeignKey('Manufacturer', null=True, blank=True)
+    manufacturer = models.ForeignKey('Manufacturer', null=True, blank=True, on_delete=models.CASCADE)
     exclude = models.BooleanField(default=False)
 
     def __unicode__(self):
@@ -102,7 +102,7 @@ class PCAStat(models.Model):
 
 
 class Classification(models.Model):
-    
+
     info = models.CharField(max_length=200)
 
     sample_type = models.CharField(max_length=2, blank=True, null=True)
@@ -127,7 +127,7 @@ class Manifold(models.Model):
     LOCALLYLINEAR = "locally_linear"
     MDS = "mds"
     SPECTRAL = "spectral"
-    
+
     MANIFOLD_METHODS = (
         (TSNE, 'TSNE'),
         (TSNEPCA, 'TSNE PCA Init'),
@@ -294,7 +294,7 @@ class AnalysisFull(models.Model):
     spectral_rolloff_dev = models.FloatField(blank=True, null=True)
     spectral_strongpeak_dev = models.FloatField(blank=True, null=True)
     inharmonicity_dev = models.FloatField(blank=True, null=True)
-    
+
     tristimulus_1 = models.FloatField(blank=True, null=True)
     tristimulus_2 = models.FloatField(blank=True, null=True)
     tristimulus_3 = models.FloatField(blank=True, null=True)
