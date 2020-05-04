@@ -3,7 +3,7 @@ Manifold Dimension Reduction
 
 
 usage:
-    python ./manage.py manifold [manifold_method] 
+    python ./manage.py manifold [manifold_method]
 """
 
 import sys
@@ -36,12 +36,12 @@ class Command(BaseCommand):
 
         choices = [x[0] for x in Sample.SAMPLE_TYPE_CHOICES]
         if options['sample_type'][0] not in choices:
-            print "Sample type must be one of %s" % choices
+            print("Sample type must be one of %s" % choices)
             sys.exit(1)
 
         methods = [x[0] for x in Manifold.MANIFOLD_METHODS]
         if options['manifold_method'][0] not in methods:
-            print "Manifold method must be one of %s" % methods
+            print("Manifold method must be one of %s" % methods)
             sys.exit(1)
 
         dimensions = [
@@ -123,7 +123,7 @@ class Command(BaseCommand):
         maxVarWindows = {}
         for feature in dimensions:
             variance = analysisVar.values('window_length', 'window_start').annotate(Variance(feature))
-            arg = np.argmax([item[feature + '__variance'] for item in variance])
+            arg = int(np.argmax([item[feature + '__variance'] for item in variance]))
             maxVarWindows[feature] = (variance[arg]['window_length'], variance[arg]['window_start'])
 
         # Create a numpy matrix of the analyis objects. Also, keep track of the sample order
@@ -132,7 +132,7 @@ class Command(BaseCommand):
         for item in analysisObjects:
             sampleOrder.append(item.sample)
             sampleObjs = [obj for obj in analysisVar.filter(sample_id=item.sample_id)]
-            windowMap = {(a.window_length,a.window_start):a for a in sampleObjs} 
+            windowMap = {(a.window_length,a.window_start):a for a in sampleObjs}
             features = []
             for feature in dimensions:
                 aObj = windowMap[maxVarWindows[feature]]
@@ -143,7 +143,7 @@ class Command(BaseCommand):
 
         # Scale everything
         nMatrix = preprocessing.scale(nMatrix)
-        
+
         manifoldMethod = {
             "tsne": manifold.TSNE(n_components=2),
             "tsne_pca": manifold.TSNE(n_components=2, init='pca'),
@@ -157,7 +157,7 @@ class Command(BaseCommand):
             options['manifold_method'][0],
             len(sampleOrder)
         ))
-        
+
         # Perform Dimension Reduction
         method = manifoldMethod[options['manifold_method'][0]]
         y = method.fit_transform(nMatrix)

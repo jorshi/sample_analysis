@@ -1,49 +1,135 @@
-"""
-Manifold Dimension Reduction
-
-
-usage:
-    python ./manage.py manifold [manifold_method]
-"""
 
 import sys
+import random
+from random import choice
+
+import matplotlib.pyplot as plt
 import numpy as np
-import math
-import pandas as pd
+from numpy.random import rand
 from sklearn import preprocessing
-from sklearn.decomposition import PCA
-import sklearn.manifold as manifold
-import scipy.stats as stats
+from sklearn.neighbors import NearestNeighbors
+
 from django.core.management.base import BaseCommand, CommandError
-from analysis.models import Sample, AnalysisFull, Manifold
+from analysis.models import Sample, SamplePack, AnalysisPCA, AnalysisFull, PCAStat, Manifold
 
 
 class Command(BaseCommand):
-    help = 'Manifold Dimension Reduction'
 
     # Override of the add_argument method
     def add_arguments(self, parser):
 
         # Required argument for the type of analysis to run
-        parser.add_argument('manifold_method', nargs=1, type=str)
+        parser.add_argument('reduction_method', nargs=1, type=str)
         parser.add_argument('sample_type', nargs=1, type=str)
         parser.add_argument('window_length', nargs=1, type=int)
         parser.add_argument('window_start', nargs=1, type=int)
+        parser.add_argument('--reference', nargs=1, type=int, default=None)
 
     # Executes on command runtime
     def handle(self, *args, **options):
 
         choices = [x[0] for x in Sample.SAMPLE_TYPE_CHOICES]
         if options['sample_type'][0] not in choices:
-            print("Sample type must be one of %s" % choices)
+            print("Sample type must by one of %s" % choices)
             sys.exit(1)
 
         methods = [x[0] for x in Manifold.MANIFOLD_METHODS]
-        if options['manifold_method'][0] not in methods:
-            print("Manifold method must be one of %s" % methods)
+        methods.append('pca')
+        methods.append('none')
+        if options['reduction_method'][0] not in methods:
+            print("Reduction method must be one of %s" % methods)
             sys.exit(1)
 
-        dimensions = [
+        # Get all the embedded samples for a particular sample type & reduction method type in a sample pack
+        if options['reduction_method'][0] == 'none':
+            samples = AnalysisFull.objects.filter(
+                window_length=options['window_length'][0],
+                window_start=options['window_start'][0],
+                sample__sample_type=options['sample_type'][0],
+            )
+        elif options['reduction_method'][0] != 'pca':
+            samples = Manifold.objects.filter(
+                method=options['reduction_method'][0],
+                window_length=options['window_length'][0],
+                window_start=options['window_start'][0],
+                sample__sample_type=options['sample_type'][0],
+            )
+        else:
+            samples = AnalysisPCA.objects.filter(
+                window_length=options['window_length'][0],
+                window_start=options['window_start'][0],
+                sample__sample_type=options['sample_type'][0],
+            )
+
+
+        # Create numpy array of samples
+        matrix = []
+        sampleOrder = []
+        refIndex = random.randint(0, len(samples))
+        index = 0
+
+        if options['reduction_method'][0] == 'none':
+            for item in samples:
+                sampleOrder.append(item.sample)
+                matrix.append([getattr(item, d) for d in self.get_dimensions()])
+
+            matrix = np.array(matrix)
+            matrix = preprocessing.scale(matrix)
+
+        else:
+            for item in samples:
+                if options['reference'] and item.sample_id == options['reference'][0]:
+                    refIndex = index
+                sampleOrder.append(item.sample)
+                matrix.append([item.dim_1, item.dim_2])
+                index = index + 1
+
+            matrix = np.array(matrix)
+
+        nbrs = NearestNeighbors(n_neighbors=matrix.shape[0], algorithm='brute').fit(matrix)
+        distances, indices = nbrs.kneighbors(matrix)
+
+
+        print("Reference id: %s" % samples[refIndex].sample_id)
+        nearestSamples = []
+        for nearest in indices[refIndex][0:6]:
+            nearestSamples.append(samples[int(nearest)].sample_id)
+
+        midSample = indices[refIndex][int(matrix.shape[0]/2.0)]
+        midSample = samples[int(midSample)].sample_id
+
+        farSample = indices[refIndex][-1]
+        farSample = samples[int(farSample)].sample_id
+
+        samples = nearestSamples.copy()
+        samples.append(midSample)
+        samples.append(farSample)
+
+        sampleObjs = Sample.objects.filter(id__in = samples)
+        sampleMap = {}
+        for item in sampleObjs:
+            sampleMap[item.id] = item
+
+        print("Nearest:")
+        for id in nearestSamples:
+            print(id, sampleMap[id].path)
+
+        print("Mid Far:")
+        print(midSample, sampleMap[midSample].path)
+
+        print("Far:")
+        print(farSample, sampleMap[farSample].path)
+
+
+
+
+
+
+
+
+    def get_dimensions(self):
+
+        return [
             'bark_1_mean','bark_2_mean','bark_3_mean','bark_4_mean','bark_5_mean','bark_6_mean','bark_7_mean',
             'bark_8_mean','bark_9_mean','bark_10_mean','bark_11_mean','bark_12_mean','bark_13_mean','bark_14_mean',
             'bark_15_mean','bark_16_mean','bark_17_mean','bark_18_mean','bark_19_mean','bark_20_mean','bark_21_mean',
@@ -105,67 +191,3 @@ class Command(BaseCommand):
             'spectral_kurtosis_dev',
             'spectral_spread_dev'
         ]
-
-        # Get all the analysis objects for a particular sample type
-        analysisObjects = AnalysisFull.objects.filter(
-            window_length=options['window_length'][0],
-            sample__sample_type=options['sample_type'][0],
-            window_start=options['window_start'][0],
-            sample__exclude=False,
-            #outlier=False
-        )
-        matrix = []
-        sampleOrder = []
-
-        # Create a numpy matrix of the analyis objects. Also, keep track of the sample order
-        # as they are retrieved from the database by storing references to the sample in the
-        # sampleOrder list
-        for item in analysisObjects:
-            sampleOrder.append(item.sample)
-            matrix.append([getattr(item, d) for d in dimensions])
-
-        nMatrix = np.array(matrix)
-
-        # Scale everything
-        nMatrix = preprocessing.scale(nMatrix)
-
-        manifoldMethod = {
-            "tsne": manifold.TSNE(n_components=2),
-            "tsne_pca": manifold.TSNE(n_components=2, init='pca'),
-            "isomap": manifold.Isomap(n_components=2),
-            "locally_linear": manifold.LocallyLinearEmbedding(n_components=2),
-            "mds": manifold.MDS(n_components=2),
-            "spectral": manifold.SpectralEmbedding(n_components=2),
-        }
-
-        self.stdout.write("Performing %s dimension reduction on %d samples" % (
-            options['manifold_method'][0],
-            len(sampleOrder)
-        ))
-
-        # Perform Dimension Reduction
-        method = manifoldMethod[options['manifold_method'][0]]
-        y = method.fit_transform(nMatrix)
-
-        self.stdout.write("Saving reduced dimensions to database")
-
-        # Save the calculated TSNE dimensions as new objects related to corresponding sample
-        for i in range(len(y)):
-            try:
-                newManifold = Manifold.objects.get(
-                    method=options['manifold_method'][0],
-                    sample=sampleOrder[i],
-                    window_length=options['window_length'][0],
-                    window_start=options['window_start'][0]
-                )
-            except Manifold.DoesNotExist:
-                newManifold = Manifold(
-                    method=options['manifold_method'][0],
-                    sample = sampleOrder[i],
-                    window_length = options['window_length'][0],
-                    window_start = options['window_start'][0]
-                )
-            for j in range(len(y[i])):
-                setattr(newManifold, "dim_%s" % (j + 1), y[i][j])
-
-            newManifold.save()
